@@ -12,7 +12,12 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./realitycheck.db")
+# Vercel serverless has a read-only filesystem; /tmp is the only writable dir.
+# Detect Vercel environment and place SQLite DB in /tmp.
+if os.getenv("VERCEL"):
+    DATABASE_URL = "sqlite:////tmp/realitycheck.db"
+else:
+    DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./realitycheck.db")
 
 engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
