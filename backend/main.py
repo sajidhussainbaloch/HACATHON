@@ -139,12 +139,11 @@ async def health():
 async def analyze(
     text: Optional[str] = Form(None),
     file: Optional[UploadFile] = File(None),
-    current_user = Depends(get_current_user),  # Protect with JWT
 ):
     """
     Accepts either a text input or an image upload.
     Pipeline: OCR (if image) → Classification → Embedding + FAISS → Explanation.
-    Requires authentication (JWT token in Authorization header).
+    Public endpoint — no authentication required.
     """
 
     # 1. Resolve input text
