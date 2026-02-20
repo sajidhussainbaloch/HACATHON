@@ -8,6 +8,7 @@ import ResultPanel from './components/ResultPanel';
 import ProtectedRoute from './components/ProtectedRoute';
 import BackgroundAnimation from './components/BackgroundAnimation';
 import ImageDetector from './components/ImageDetector';
+import ImageGenerator from './components/ImageGenerator';
 import { analyzeContent } from './services/api';
 
 // Pages
@@ -37,28 +38,33 @@ function AnalyzerPage() {
     } finally {
       setLoading(false);
     }
-  }, []);
-
-  const handleReset = useCallback(() => {
-    setResult(null);
-    setError('');
-  }, []);
-
-  return (
-    <main className="max-w-5xl mx-auto py-8">
-      {!result && !loading && <Hero />}
-      {!result && !loading && <InputArea onSubmit={handleSubmit} loading={loading} />}
-      {loading && <Loader />}
-      {error && (
-        <div className="max-w-3xl mx-auto px-4 mt-6 animate-fade-in-up">
-          <div className="rounded-xl p-4 bg-red-500/10 border border-red-500/30 text-red-400 text-sm">
-            ⚠️ {error}
-          </div>
-        </div>
-      )}
-      {result && (
-        <>
-          <ResultPanel data={result} />
+          [
+            {
+              icon: '🔍',
+              title: 'Forensic Media Classifier',
+              desc: 'Transformer-based credibility scoring with calibrated confidence bands.'
+            },
+            {
+              icon: '🧠',
+              title: 'Advanced Study Analyzer',
+              desc: 'Contextual summaries, concept graphs, MCQ generation, and exam-ready insights.'
+            },
+            {
+              icon: '📷',
+              title: 'AI Image Authenticity Checker',
+              desc: 'Deepfake and synthetic-image detection with real-time confidence explanations.'
+            },
+            {
+              icon: '🪄',
+              title: 'AI Image Generator Studio',
+              desc: 'Prompt-to-image generation using FLUX.1 Schnell with rapid iteration.'
+            },
+            {
+              icon: '📚',
+              title: 'Evidence Retrieval Engine',
+              desc: 'RAG pipeline aligned to trusted sources with audit-ready citations.'
+            }
+          ].map((f) => (
           <div className="flex justify-center mt-2 pb-8">
             <button
               onClick={handleReset}
@@ -166,6 +172,7 @@ export default function App() {
           <Route path="/privacy-policy" element={<PrivacyPolicy />} />
           <Route path="/app" element={<AnalyzerPage />} />
           <Route path="/image-detector" element={<ImageDetector />} />
+          <Route path="/image-generator" element={<ImageGenerator />} />
           <Route path="/student-assistant" element={<StudentAssistant />} />
           <Route path="/profile" element={
             <ProtectedRoute>

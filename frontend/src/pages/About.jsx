@@ -88,6 +88,16 @@ export default function About() {
           </p>
         </section>
 
+        {/* Image Generator */}
+        <section className="mb-8">
+          <h2 className="text-xl font-bold mb-3" style={{ color: 'var(--text-primary)' }}>AI Image Generator Studio</h2>
+          <p className="leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
+            The Image Generator Studio provides prompt-to-image synthesis using a free
+            Hugging Face model (FLUX.1 Schnell). It is designed for fast concept exploration
+            and creative iteration with lightweight, serverless-friendly inference.
+          </p>
+        </section>
+
         {/* Technology Stack */}
         <section className="mb-8">
           <h2 className="text-xl font-bold mb-4" style={{ color: 'var(--text-primary)' }}>Technology</h2>

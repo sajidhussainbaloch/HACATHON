@@ -58,6 +58,11 @@ export default function Navbar({ darkMode, toggleDarkMode }) {
                   style={{ color: 'var(--text-secondary)' }}>
               Image Authenticity Checker
             </Link>
+            <Link to="/image-generator"
+                  className="px-3 py-2 rounded-lg text-sm font-medium transition-all duration-300 hover:bg-indigo-500/10 hover:text-indigo-400 active:scale-95"
+                  style={{ color: 'var(--text-secondary)' }}>
+              Image Generator
+            </Link>
 
             {isAuthenticated && (
               <>

@@ -19,6 +19,7 @@ from services.rag import build_index, retrieve_similar
 from services.explanation import generate_explanation
 from student_routes import router as student_router
 from image_detector_routes import router as image_detector_router
+from image_generator_routes import router as image_generator_router
 from utils.config import MAX_INPUT_CHARS
 
 from database import init_db
@@ -73,6 +74,7 @@ app.add_middleware(
 
 app.include_router(student_router)
 app.include_router(image_detector_router)
+app.include_router(image_generator_router)
 
 
 # ── Health check ──────────────────────────────────────────────────────────────
