@@ -92,7 +92,18 @@ async def analyze(
     news_text: str | None = None
 
     if file is not None:
-        news_text = await extract_text_from_image(file)
+        # Try OCR, but if it returns None (API not available), use text if provided
+        extracted = await extract_text_from_image(file)
+        if extracted:
+            news_text = extracted
+        elif text is not None:
+            news_text = text.strip()
+        else:
+            raise HTTPException(
+                status_code=400,
+                detail="Could not extract text from image (OCR unavailable) and no text provided. "
+                       "Please provide text directly.",
+            )
     elif text is not None:
         news_text = text.strip()
 

@@ -3,7 +3,7 @@ uvicorn[standard]
 httpx
 python-dotenv
 python-multipart
-pytesseract
+google-cloud-vision
 Pillow
 faiss-cpu
 numpy
