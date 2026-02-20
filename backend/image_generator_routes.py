@@ -18,40 +18,28 @@ from PIL import Image
 router = APIRouter(prefix="/api/image", tags=["image-generator"])
 
 HF_API_KEY = os.getenv("HF_API_KEY")
-HF_MODEL_ALIASES = {
-    "sdxl_base": "stabilityai/stable-diffusion-xl-base-1.0",
-    "sdxl_lightning": "ByteDance/SDXL-Lightning",
-    "sdxl_api": "stabilityai/stable-diffusion-xl-base-1.0",
-}
-DEFAULT_MODEL_ALIAS = "sdxl_base"
-FALLBACK_MODEL_ALIAS = "sdxl_lightning"
+HF_MODEL_ID = "runwayml/stable-diffusion-v1-5"
 
 
 class GenerateRequest(BaseModel):
     prompt: str
     negative_prompt: Optional[str] = None
-    model: Optional[str] = None
 
 
 @router.post("/generate")
 async def generate_image(payload: GenerateRequest):
     prompt = (payload.prompt or "").strip()
     negative_prompt = (payload.negative_prompt or "").strip()
-    model_alias = (payload.model or DEFAULT_MODEL_ALIAS).strip().lower()
-    model_id = HF_MODEL_ALIASES.get(model_alias)
     if len(prompt) < 3:
         raise HTTPException(status_code=400, detail="Prompt is too short.")
-
-    if not model_id:
-        raise HTTPException(status_code=400, detail="Unsupported image model.")
 
     if not HF_API_KEY:
         raise HTTPException(status_code=503, detail="HF_API_KEY is not configured.")
 
     headers = {"Authorization": f"Bearer {HF_API_KEY}"}
 
-    async def request_model(target_model_id: str):
-        endpoint = f"https://api-inference.huggingface.co/models/{target_model_id}"
+    async def request_model():
+        endpoint = f"https://api-inference.huggingface.co/models/{HF_MODEL_ID}"
         request_body = {"inputs": prompt}
         if negative_prompt:
             request_body["parameters"] = {"negative_prompt": negative_prompt}
@@ -59,7 +47,7 @@ async def generate_image(payload: GenerateRequest):
             return await client.post(endpoint, headers=headers, json=request_body)
 
     try:
-        response = await request_model(model_id)
+        response = await request_model()
 
         content_type = response.headers.get("content-type", "")
         if response.status_code >= 400:
@@ -73,24 +61,7 @@ async def generate_image(payload: GenerateRequest):
                     status_code=502,
                     detail="Model access denied. Check HF token permissions.",
                 )
-            if response.status_code in {404, 410}:
-                fallback_id = HF_MODEL_ALIASES.get(FALLBACK_MODEL_ALIAS)
-                if fallback_id and fallback_id != model_id:
-                    response = await request_model(fallback_id)
-                    if response.status_code < 400:
-                        model_id = fallback_id
-                    else:
-                        raise HTTPException(
-                            status_code=502,
-                            detail="Selected model is unavailable. Please choose another model.",
-                        )
-                else:
-                    raise HTTPException(
-                        status_code=502,
-                        detail="Selected model is unavailable. Please choose another model.",
-                    )
-            else:
-                raise HTTPException(status_code=502, detail="Image generation failed.")
+            raise HTTPException(status_code=502, detail="Image generation failed.")
 
         if "application/json" in content_type:
             data = response.json()
@@ -114,7 +85,7 @@ async def generate_image(payload: GenerateRequest):
             "content_type": content_type or "image/png",
             "width": width,
             "height": height,
-            "model": model_id,
+            "model": HF_MODEL_ID,
         }
     except HTTPException:
         raise

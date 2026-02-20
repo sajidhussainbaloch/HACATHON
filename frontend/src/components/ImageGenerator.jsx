@@ -5,18 +5,11 @@ const API_BASE = import.meta.env.VITE_API_URL || '';
 export default function ImageGenerator() {
   const [prompt, setPrompt] = useState('');
   const [negativePrompt, setNegativePrompt] = useState('');
-  const [model, setModel] = useState('sdxl_base');
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
   const [error, setError] = useState('');
   const [isTouch, setIsTouch] = useState(false);
   const abortRef = useRef(null);
-
-  const modelOptions = [
-    { value: 'sdxl_base', label: 'SDXL Base (stabilityai)' },
-    { value: 'sdxl_lightning', label: 'SDXL Lightning (ByteDance)' },
-    { value: 'sdxl_api', label: 'SDXL API Alias (stabilityai)' },
-  ];
 
   const presets = [
     'Cinematic portrait of a researcher in a neon-lit lab, ultra-detailed, 35mm',
@@ -61,7 +54,6 @@ export default function ImageGenerator() {
         body: JSON.stringify({
           prompt: prompt.trim(),
           negative_prompt: negativePrompt.trim() || undefined,
-          model,
         }),
         signal: controller.signal,
       });
@@ -99,8 +91,8 @@ export default function ImageGenerator() {
             AI Image Generator Studio
           </h1>
           <p className="text-sm sm:text-base" style={{ color: 'var(--text-secondary)' }}>
-            Generate high-quality images with SDXL variants. Add a negative prompt to exclude
-            unwanted elements. No files are stored.
+            Generate high-quality images with a free Hugging Face model. Add a negative prompt to
+            exclude unwanted elements. No files are stored.
           </p>
         </div>
 
@@ -165,26 +157,6 @@ export default function ImageGenerator() {
                 </div>
               </div>
 
-              <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-                <label className="block text-xs uppercase tracking-wider mb-2" style={{ color: 'var(--text-secondary)' }}>
-                  Model
-                </label>
-                <select
-                  value={model}
-                  onChange={(event) => setModel(event.target.value)}
-                  className="w-full rounded-xl p-3 text-sm bg-transparent border border-white/10 focus:outline-none focus:border-indigo-400"
-                  style={{ color: 'var(--text-primary)' }}
-                >
-                  {modelOptions.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-                <p className="mt-2 text-xs" style={{ color: 'var(--text-secondary)' }}>
-                  Switch between SDXL base and faster lightning variants.
-                </p>
-              </div>
 
               <button
                 onClick={handleGenerate}
