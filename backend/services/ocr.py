@@ -5,6 +5,7 @@ Falls back gracefully if credentials are not configured.
 """
 
 import os
+import json
 from PIL import Image
 from io import BytesIO
 from fastapi import UploadFile, HTTPException
@@ -12,6 +13,7 @@ from fastapi import UploadFile, HTTPException
 # Try to import Google Cloud Vision
 try:
     from google.cloud import vision
+    from google.oauth2 import service_account
     VISION_AVAILABLE = True
 except ImportError:
     VISION_AVAILABLE = False
@@ -38,7 +40,8 @@ async def extract_text_from_image(file: UploadFile) -> str | None:
         return None
 
     # Check if credentials are configured
-    if not os.getenv("GOOGLE_APPLICATION_CREDENTIALS"):
+    creds_var = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
+    if not creds_var:
         print("⚠️  OCR skipped: GOOGLE_APPLICATION_CREDENTIALS not set")
         return None
 
@@ -53,8 +56,24 @@ async def extract_text_from_image(file: UploadFile) -> str | None:
             print(f"⚠️  Invalid image file: {e}")
             return None
 
+        # Create Vision API client
+        # Handle both file path and JSON credentials
+        try:
+            if creds_var.strip().startswith('{'):
+                # JSON credentials passed as environment variable
+                print("ℹ️  Using JSON credentials from GOOGLE_APPLICATION_CREDENTIALS")
+                creds_dict = json.loads(creds_var)
+                credentials = service_account.Credentials.from_service_account_info(creds_dict)
+                client = vision.ImageAnnotatorClient(credentials=credentials)
+            else:
+                # File path credentials (standard behavior)
+                print("ℹ️  Using file-based credentials from GOOGLE_APPLICATION_CREDENTIALS")
+                client = vision.ImageAnnotatorClient()
+        except json.JSONDecodeError as e:
+            print(f"⚠️  Failed to parse GOOGLE_APPLICATION_CREDENTIALS as JSON: {e}")
+            return None
+
         # Call Google Cloud Vision API
-        client = vision.ImageAnnotatorClient()
         image_obj = vision.Image(content=contents)
         response = client.text_detection(image=image_obj)
 
