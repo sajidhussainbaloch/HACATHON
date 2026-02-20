@@ -13,7 +13,7 @@ export default function About() {
             ✓
           </div>
           <h1 className="text-3xl font-bold" style={{ color: 'var(--text-primary)' }}>
-            About RealityCheck AI
+            About Zayqen AI
           </h1>
           <p className="text-lg mt-2" style={{ color: 'var(--text-secondary)' }}>
             AI-Powered Fake News & Misinformation Detection
@@ -24,13 +24,14 @@ export default function About() {
         <section className="mb-8">
           <h2 className="text-xl font-bold mb-3" style={{ color: 'var(--text-primary)' }}>Our Mission</h2>
           <p className="leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
-            RealityCheck AI is built to combat the growing spread of misinformation and fake news online.
-            Our platform uses advanced AI models to analyze news articles, social media posts, and other
-            text content — providing instant, evidence-based assessments of their credibility.
+            Zayqen AI is a professional-grade authenticity platform designed to reduce misinformation,
+            accelerate verification workflows, and provide explainable AI signals at scale. We combine
+            retrieval-augmented generation, calibrated classifiers, and forensic signals to deliver high-trust
+            media insights in seconds.
           </p>
           <p className="leading-relaxed mt-3" style={{ color: 'var(--text-secondary)' }}>
-            We believe that access to truthful information is a fundamental right, and technology should
-            empower people to make informed decisions about the content they consume and share.
+            Our goal is to empower researchers, educators, and newsrooms with enterprise-ready, transparent
+            assessments that can be audited and shared responsibly.
           </p>
         </section>
 
@@ -41,18 +42,18 @@ export default function About() {
             {[
               {
                 step: '1',
-                title: 'Input Content',
-                desc: 'Paste text, type an article, or upload an image containing text you want to verify.'
+                title: 'Ingest & Normalize',
+                desc: 'Submit text, screenshots, or images for multi-modal verification and normalization.'
               },
               {
                 step: '2',
-                title: 'AI Analysis',
-                desc: 'Our AI classifies the content as Real, Fake, or Misleading using LLM-based reasoning.'
+                title: 'AI Authenticity Pass',
+                desc: 'Classifier ensembles score credibility, bias signals, and semantic anomalies.'
               },
               {
                 step: '3',
-                title: 'Evidence & Report',
-                desc: 'Get a detailed explanation with evidence from trusted sources and downloadable PDF reports.'
+                title: 'Evidence & Audit',
+                desc: 'Retrieval pipelines surface provenance, citations, and audit-ready outputs.'
               }
             ].map((item) => (
               <div key={item.step} className="p-4 rounded-xl" style={{ backgroundColor: 'var(--bg-primary)' }}>
@@ -66,19 +67,40 @@ export default function About() {
           </div>
         </section>
 
+        {/* Study Analyzer */}
+        <section className="mb-8">
+          <h2 className="text-xl font-bold mb-3" style={{ color: 'var(--text-primary)' }}>Advanced Study Analyzer</h2>
+          <p className="leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
+            The Study Analyzer transforms academic notes into structured learning assets, including
+            high-precision executive summaries, key concepts, flashcards, viva prompts, and MCQ banks.
+            It uses context-aware semantic parsing and adaptive prompt orchestration to produce exam-ready
+            materials in minutes.
+          </p>
+        </section>
+
+        {/* Image Authenticity Checker */}
+        <section className="mb-8">
+          <h2 className="text-xl font-bold mb-3" style={{ color: 'var(--text-primary)' }}>Image Authenticity Checker</h2>
+          <p className="leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
+            Our image checker flags AI-generated and deepfake imagery using forensic cues and
+            free inference models. It returns a confidence score and concise explanation for
+            transparent decision-making.
+          </p>
+        </section>
+
         {/* Technology Stack */}
         <section className="mb-8">
           <h2 className="text-xl font-bold mb-4" style={{ color: 'var(--text-primary)' }}>Technology</h2>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             {[
               { name: 'Mistral 7B', desc: 'LLM Classification' },
-              { name: 'FAISS', desc: 'Vector Search' },
-              { name: 'FastAPI', desc: 'Backend API' },
-              { name: 'React', desc: 'Frontend UI' },
-              { name: 'Tesseract OCR', desc: 'Image Text Extraction' },
-              { name: 'HuggingFace', desc: 'Embeddings' },
-              { name: 'Tailwind CSS', desc: 'Styling' },
-              { name: 'SQLite', desc: 'Database' },
+              { name: 'FAISS', desc: 'Vector Retrieval' },
+              { name: 'FastAPI', desc: 'Serverless API' },
+              { name: 'React', desc: 'Modern UI' },
+              { name: 'OCR.space', desc: 'Image Text Extraction' },
+              { name: 'HuggingFace', desc: 'Model Inference' },
+              { name: 'Tailwind CSS', desc: 'Design System' },
+              { name: 'Supabase', desc: 'Auth & Identity' },
             ].map((tech) => (
               <div key={tech.name} className="p-3 rounded-lg text-center" style={{ backgroundColor: 'var(--bg-primary)' }}>
                 <p className="font-semibold text-sm" style={{ color: 'var(--text-primary)' }}>{tech.name}</p>
@@ -92,7 +114,7 @@ export default function About() {
         <section className="mb-6">
           <h2 className="text-xl font-bold mb-3" style={{ color: 'var(--text-primary)' }}>Disclaimer</h2>
           <p className="text-sm leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
-            RealityCheck AI provides AI-generated assessments and should be used as a supplementary tool.
+            Zayqen AI provides AI-generated assessments and should be used as a supplementary tool.
             Results are based on pattern recognition and comparison with known information — they are not
             definitive truth judgments. Always cross-reference important information with multiple trusted
             sources. We are not responsible for decisions made based on the AI's analysis.

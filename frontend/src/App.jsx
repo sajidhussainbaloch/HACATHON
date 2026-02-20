@@ -7,6 +7,7 @@ import Loader from './components/Loader';
 import ResultPanel from './components/ResultPanel';
 import ProtectedRoute from './components/ProtectedRoute';
 import BackgroundAnimation from './components/BackgroundAnimation';
+import ImageDetector from './components/ImageDetector';
 import { analyzeContent } from './services/api';
 
 // Pages
@@ -74,54 +75,66 @@ function AnalyzerPage() {
 
 function HomePage() {
   return (
-    <main className="max-w-5xl mx-auto py-16 px-4">
+    <main className="max-w-6xl mx-auto py-16 px-4">
       <div className="text-center animate-fade-in-up">
-        <div className="w-20 h-20 rounded-2xl bg-indigo-500 flex items-center justify-center text-white font-bold text-4xl mx-auto mb-6">
-          ✓
-        </div>
-        <h1 className="text-4xl md:text-5xl font-bold mb-4" style={{ color: 'var(--text-primary)' }}>
-          RealityCheck <span className="text-indigo-500">AI</span>
-        </h1>
-        <p className="text-lg md:text-xl max-w-2xl mx-auto mb-8" style={{ color: 'var(--text-secondary)' }}>
-          AI-powered fake news and misinformation detection. Paste any text or upload an image
-          to get an instant credibility analysis backed by evidence from trusted sources.
-        </p>
-        <div className="flex flex-col sm:flex-row gap-4 justify-center">
-          <Link
-            to="/app"
-            className="px-8 py-3 rounded-xl bg-indigo-500 text-white font-semibold text-lg hover:bg-indigo-600 transition-colors no-underline"
-          >
-            Start Analyzing
-          </Link>
-          <Link
-            to="/about"
-            className="px-8 py-3 rounded-xl border-2 border-indigo-500 text-indigo-500 font-semibold text-lg hover:bg-indigo-500/10 transition-colors no-underline"
-          >
-            Learn More
-          </Link>
+        <div className="hero-3d glass-reflect rounded-3xl p-10 sm:p-14">
+          <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold text-4xl mx-auto mb-6 shadow-xl">
+            ✓
+          </div>
+          <div className="typewriter mb-4">
+            <span className="typewriter-text text-3xl sm:text-5xl font-black tracking-tight hero-title-shadow">
+              Zayqen AI
+            </span>
+            <span className="typewriter-cursor" aria-hidden="true"></span>
+          </div>
+          <h2 className="text-xl sm:text-2xl font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>
+            Professional AI Authenticity Suite
+          </h2>
+          <p className="text-base sm:text-lg max-w-3xl mx-auto mb-8" style={{ color: 'var(--text-secondary)' }}>
+            Detect misinformation, validate images, and accelerate study workflows with a unified
+            verification layer. Built for high-trust media, research, and academic integrity.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Link
+              to="/app"
+              className="px-8 py-3 rounded-xl bg-indigo-500 text-white font-semibold text-lg hover:bg-indigo-600 transition-colors no-underline"
+            >
+              Start Analyzing
+            </Link>
+            <Link
+              to="/image-detector"
+              className="px-8 py-3 rounded-xl border-2 border-indigo-500 text-indigo-400 font-semibold text-lg hover:bg-indigo-500/10 transition-colors no-underline"
+            >
+              Check an Image
+            </Link>
+          </div>
         </div>
 
         {/* Features grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-16">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 mt-14">
           {[
             {
               icon: '🔍',
-              title: 'AI Classification',
-              desc: 'Mistral 7B LLM classifies content as Real, Fake, or Misleading with confidence scores.'
+              title: 'Forensic Media Classifier',
+              desc: 'Transformer-based credibility scoring with calibrated confidence bands.'
+            },
+            {
+              icon: '🧠',
+              title: 'Advanced Study Analyzer',
+              desc: 'Contextual summaries, concept graphs, MCQ generation, and exam-ready insights.'
+            },
+            {
+              icon: '📷',
+              title: 'AI Image Authenticity Checker',
+              desc: 'Deepfake and synthetic-image detection with real-time confidence explanations.'
             },
             {
               icon: '📚',
-              title: 'Evidence Retrieval',
-              desc: 'RAG pipeline compares your content against a knowledge base of trusted sources.'
-            },
-            {
-              icon: '📊',
-              title: 'Detailed Reports',
-              desc: 'Get explanations, inconsistency detection, and downloadable PDF reports.'
+              title: 'Evidence Retrieval Engine',
+              desc: 'RAG pipeline aligned to trusted sources with audit-ready citations.'
             }
           ].map((f) => (
-            <div key={f.title} className="tilt-card p-6 rounded-xl text-left"
-                 style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)' }}>
+            <div key={f.title} className="tilt-card p-6 rounded-2xl text-left bg-white/5 border border-white/10 backdrop-blur-sm">
               <div className="text-3xl mb-3">{f.icon}</div>
               <h3 className="font-bold mb-2" style={{ color: 'var(--text-primary)' }}>{f.title}</h3>
               <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>{f.desc}</p>
@@ -152,6 +165,7 @@ export default function App() {
           <Route path="/about" element={<About />} />
           <Route path="/privacy-policy" element={<PrivacyPolicy />} />
           <Route path="/app" element={<AnalyzerPage />} />
+          <Route path="/image-detector" element={<ImageDetector />} />
           <Route path="/student-assistant" element={<StudentAssistant />} />
           <Route path="/profile" element={
             <ProtectedRoute>
@@ -197,7 +211,7 @@ export default function App() {
                 ))}
               </div>
               <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
-                RealityCheck AI · Built for truth · {new Date().getFullYear()}
+                Zayqen AI · Built for truth · {new Date().getFullYear()}
               </p>
             </div>
           </div>

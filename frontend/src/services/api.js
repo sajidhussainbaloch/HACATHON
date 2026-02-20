@@ -1,5 +1,5 @@
 /**
- * RealityCheck AI — API service
+ * Zayqen AI — API service
  * Communicates with the FastAPI backend for analysis.
  * Auth is handled directly by Supabase (see supabase.js + AuthContext).
  */

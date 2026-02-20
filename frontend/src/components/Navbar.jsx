@@ -37,7 +37,7 @@ export default function Navbar({ darkMode, toggleDarkMode }) {
           </div>
           <div className="hidden sm:block">
             <span className="text-lg font-bold tracking-tight bg-gradient-to-r from-indigo-500 to-purple-600 bg-clip-text text-transparent">
-              RealityCheck
+              Zayqen AI
             </span>
             <span className="text-xs block text-indigo-400 font-medium">Trust Signal Engine</span>
           </div>
@@ -52,6 +52,11 @@ export default function Navbar({ darkMode, toggleDarkMode }) {
                   className="px-3 py-2 rounded-lg text-sm font-medium transition-all duration-300 hover:bg-indigo-500/10 hover:text-indigo-400 active:scale-95"
                   style={{ color: 'var(--text-secondary)' }}>
               About
+            </Link>
+            <Link to="/image-detector"
+                  className="px-3 py-2 rounded-lg text-sm font-medium transition-all duration-300 hover:bg-indigo-500/10 hover:text-indigo-400 active:scale-95"
+                  style={{ color: 'var(--text-secondary)' }}>
+              Image Authenticity Checker
             </Link>
 
             {isAuthenticated && (
