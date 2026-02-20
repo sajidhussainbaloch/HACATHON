@@ -24,6 +24,7 @@ HF_MODEL_ALIASES = {
     "sdxl_api": "stabilityai/stable-diffusion-xl-base-1.0",
 }
 DEFAULT_MODEL_ALIAS = "sdxl_base"
+FALLBACK_MODEL_ALIAS = "sdxl_lightning"
 
 
 class GenerateRequest(BaseModel):
@@ -48,15 +49,17 @@ async def generate_image(payload: GenerateRequest):
         raise HTTPException(status_code=503, detail="HF_API_KEY is not configured.")
 
     headers = {"Authorization": f"Bearer {HF_API_KEY}"}
-    endpoint = f"https://api-inference.huggingface.co/models/{model_id}"
 
-    try:
+    async def request_model(target_model_id: str):
+        endpoint = f"https://api-inference.huggingface.co/models/{target_model_id}"
         request_body = {"inputs": prompt}
         if negative_prompt:
             request_body["parameters"] = {"negative_prompt": negative_prompt}
-
         async with httpx.AsyncClient(timeout=20.0) as client:
-            response = await client.post(endpoint, headers=headers, json=request_body)
+            return await client.post(endpoint, headers=headers, json=request_body)
+
+    try:
+        response = await request_model(model_id)
 
         content_type = response.headers.get("content-type", "")
         if response.status_code >= 400:
@@ -65,12 +68,29 @@ async def generate_image(payload: GenerateRequest):
                     status_code=503,
                     detail="Model is warming up. Please retry in a moment.",
                 )
-            if response.status_code == 410:
+            if response.status_code in {401, 403}:
                 raise HTTPException(
                     status_code=502,
-                    detail="Selected model is unavailable. Please choose another model.",
+                    detail="Model access denied. Check HF token permissions.",
                 )
-            raise HTTPException(status_code=502, detail="Image generation failed.")
+            if response.status_code in {404, 410}:
+                fallback_id = HF_MODEL_ALIASES.get(FALLBACK_MODEL_ALIAS)
+                if fallback_id and fallback_id != model_id:
+                    response = await request_model(fallback_id)
+                    if response.status_code < 400:
+                        model_id = fallback_id
+                    else:
+                        raise HTTPException(
+                            status_code=502,
+                            detail="Selected model is unavailable. Please choose another model.",
+                        )
+                else:
+                    raise HTTPException(
+                        status_code=502,
+                        detail="Selected model is unavailable. Please choose another model.",
+                    )
+            else:
+                raise HTTPException(status_code=502, detail="Image generation failed.")
 
         if "application/json" in content_type:
             data = response.json()
