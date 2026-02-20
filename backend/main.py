@@ -82,10 +82,13 @@ async def debug_ocr():
     """
     Returns diagnostic info about OCR setup.
     """
+    from services.ocr import OCR_AVAILABLE
+    
     return {
-        "ocr_method": "OCR.space API (free, no auth required)",
-        "api_status": "Available",
-        "note": "Using free tier OCR.space - no billing or authentication needed",
+        "ocr_method": "PaddleOCR (free, fully local, no API calls)",
+        "ocr_available": OCR_AVAILABLE,
+        "api_status": "Available" if OCR_AVAILABLE else "Not initialized",
+        "note": "Local OCR processing - no billing, no API calls, no rate limits",
     }
 
 
