@@ -55,11 +55,17 @@ Use this checklist to collect all required values before deploying.
 
 **How to get them:**
 
-| Variable | Service | Get from |
-|----------|---------|----------|
-| `CLOUDFLARE_ACCOUNT_ID` | Cloudflare | Docs → Workers & Pages → Account details |
-| `CLOUDFLARE_API_TOKEN` | Cloudflare | API Tokens section |
-| `HUGGINGFACE_API_TOKEN` | Hugging Face | Settings → API tokens |
+| Variable | Service | Get from | Required For |
+|----------|---------|----------|--------------|
+| `CLOUDFLARE_ACCOUNT_ID` | Cloudflare | Docs → Workers & Pages → Account details | OCR/Vision |
+| `CLOUDFLARE_API_TOKEN` | Cloudflare | API Tokens section | OCR/Vision |
+| `HF_API_KEY` | Hugging Face | [Settings → Access Tokens](https://huggingface.co/settings/tokens) | **Image Generation** |
+
+**⚠️ Important for Image Generation:**
+- Get a **free** Hugging Face token at https://huggingface.co/settings/tokens
+- Click "New token" → Select "Read" access → Copy the token
+- Set `HF_API_KEY` in Vercel environment variables
+- No billing required - uses free inference API with rate limits
 
 ---
 
@@ -159,7 +165,7 @@ GOOGLE OAUTH (configure in Supabase, not Vercel):
 API KEYS:
   Cloudflare ID:    ________________________
   Cloudflare Token: ________________________
-  HuggingFace:      ________________________
+  HF_API_KEY:       ________________________ (Get from https://huggingface.co/settings/tokens)
 
 EMAIL:
   Gmail:        ________________________

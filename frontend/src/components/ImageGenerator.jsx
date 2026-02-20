@@ -5,10 +5,9 @@ const API_BASE = import.meta.env.VITE_API_URL || '';
 export default function ImageGenerator() {
   const [prompt, setPrompt] = useState('');
   const [negativePrompt, setNegativePrompt] = useState('');
-  const [model, setModel] = useState('Flux1schnell');
+  const [model, setModel] = useState('flux-schnell');
   const [width, setWidth] = useState(768);
   const [height, setHeight] = useState(768);
-  const [steps, setSteps] = useState(4);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
   const [error, setError] = useState('');
@@ -24,9 +23,9 @@ export default function ImageGenerator() {
   ];
 
   const modelOptions = [
-    { value: 'Flux_2_Klein_4B_BF16', label: 'FLUX.2 Klein 4B BF16' },
-    { value: 'ZImageTurbo_INT8', label: 'Z-Image-Turbo INT8' },
-    { value: 'Flux1schnell', label: 'FLUX.1 Schnell' },
+    { value: 'flux-schnell', label: 'FLUX.1 Schnell (Fast)' },
+    { value: 'stable-diffusion-2.1', label: 'Stable Diffusion 2.1' },
+    { value: 'stable-diffusion-1.5', label: 'Stable Diffusion 1.5' },
   ];
 
   useEffect(() => {
@@ -66,7 +65,6 @@ export default function ImageGenerator() {
           model,
           width: Number(width),
           height: Number(height),
-          steps: Number(steps),
           negative_prompt: negativePrompt.trim() || undefined,
         }),
         signal: controller.signal,
@@ -188,7 +186,7 @@ export default function ImageGenerator() {
                   ))}
                 </select>
                 <p className="mt-2 text-xs" style={{ color: 'var(--text-secondary)' }}>
-                  Choose the DeAPI free model to use for generation.
+                  Choose the Hugging Face model for generation (all free).
                 </p>
               </div>
 
@@ -204,17 +202,6 @@ export default function ImageGenerator() {
                   Width and height in pixels (min 256).
                 </p>
               </div>
-
-              <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-                <label className="block text-xs uppercase tracking-wider mb-2" style={{ color: 'var(--text-secondary)' }}>
-                  Steps
-                </label>
-                <input type="number" value={steps} onChange={(e)=>setSteps(Number(e.target.value))} className="w-full rounded-xl p-3 text-sm bg-transparent border border-white/10" />
-                <p className="mt-2 text-xs" style={{ color: 'var(--text-secondary)' }}>
-                  Number of diffusion steps (recommended 4-50).
-                </p>
-              </div>
-
 
               <button
                 onClick={handleGenerate}
