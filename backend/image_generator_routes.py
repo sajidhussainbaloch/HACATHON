@@ -18,26 +18,37 @@ from PIL import Image
 router = APIRouter(prefix="/api/image", tags=["image-generator"])
 
 HF_API_KEY = os.getenv("HF_API_KEY")
-HF_MODEL_ID = "black-forest-labs/FLUX.1-schnell"
-HF_ENDPOINT = f"https://api-inference.huggingface.co/models/{HF_MODEL_ID}"
+HF_MODEL_ALIASES = {
+    "sdxl_base": "stabilityai/stable-diffusion-xl-base-1.0",
+    "sdxl_lightning": "ByteDance/SDXL-Lightning",
+    "sdxl_api": "stabilityai/stable-diffusion-xl-base-1.0",
+}
+DEFAULT_MODEL_ALIAS = "sdxl_base"
 
 
 class GenerateRequest(BaseModel):
     prompt: str
     negative_prompt: Optional[str] = None
+    model: Optional[str] = None
 
 
 @router.post("/generate")
 async def generate_image(payload: GenerateRequest):
     prompt = (payload.prompt or "").strip()
     negative_prompt = (payload.negative_prompt or "").strip()
+    model_alias = (payload.model or DEFAULT_MODEL_ALIAS).strip().lower()
+    model_id = HF_MODEL_ALIASES.get(model_alias)
     if len(prompt) < 3:
         raise HTTPException(status_code=400, detail="Prompt is too short.")
+
+    if not model_id:
+        raise HTTPException(status_code=400, detail="Unsupported image model.")
 
     if not HF_API_KEY:
         raise HTTPException(status_code=503, detail="HF_API_KEY is not configured.")
 
     headers = {"Authorization": f"Bearer {HF_API_KEY}"}
+    endpoint = f"https://api-inference.huggingface.co/models/{model_id}"
 
     try:
         request_body = {"inputs": prompt}
@@ -45,7 +56,7 @@ async def generate_image(payload: GenerateRequest):
             request_body["parameters"] = {"negative_prompt": negative_prompt}
 
         async with httpx.AsyncClient(timeout=20.0) as client:
-            response = await client.post(HF_ENDPOINT, headers=headers, json=request_body)
+            response = await client.post(endpoint, headers=headers, json=request_body)
 
         content_type = response.headers.get("content-type", "")
         if response.status_code >= 400:
@@ -53,6 +64,11 @@ async def generate_image(payload: GenerateRequest):
                 raise HTTPException(
                     status_code=503,
                     detail="Model is warming up. Please retry in a moment.",
+                )
+            if response.status_code == 410:
+                raise HTTPException(
+                    status_code=502,
+                    detail="Selected model is unavailable. Please choose another model.",
                 )
             raise HTTPException(status_code=502, detail="Image generation failed.")
 
@@ -78,7 +94,7 @@ async def generate_image(payload: GenerateRequest):
             "content_type": content_type or "image/png",
             "width": width,
             "height": height,
-            "model": HF_MODEL_ID,
+            "model": model_id,
         }
     except HTTPException:
         raise
