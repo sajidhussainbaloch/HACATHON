@@ -36,6 +36,10 @@ class GenerateRequest(BaseModel):
     prompt: str
     negative_prompt: Optional[str] = None
     model: Optional[str] = None
+    width: Optional[int] = None
+    height: Optional[int] = None
+    seed: Optional[int] = None
+    steps: Optional[int] = None
 
 
 @router.post("/generate")
@@ -54,15 +58,27 @@ async def generate_image(payload: GenerateRequest):
     }
 
     async def request_deapi(model_name: str):
-        body = {"model": model_name, "prompt": prompt}
+        body: dict = {"model": model_name, "prompt": prompt}
         if negative_prompt:
             body["negative_prompt"] = negative_prompt
-        async with httpx.AsyncClient(timeout=60.0) as client:
-            return await client.post(DEAPI_BASE_URL, headers=deapi_headers, json=body)
+        # include optional image parameters if provided
+        if getattr(payload, "width", None):
+            body["width"] = int(payload.width)
+        if getattr(payload, "height", None):
+            body["height"] = int(payload.height)
+        if getattr(payload, "seed", None) is not None:
+            body["seed"] = int(payload.seed)
+        if getattr(payload, "steps", None) is not None:
+            body["steps"] = int(payload.steps)
+
+        async with httpx.AsyncClient(timeout=120.0) as client:
+            # The working client endpoint for your account is /client/txt2img
+            url = f"{DEAPI_BASE_URL.rstrip('/')}/client/txt2img"
+            return await client.post(url, headers=deapi_headers, json=body)
 
     try:
         model_requested = getattr(payload, "model", None) if hasattr(payload, "model") else None
-        model_requested = (model_requested or "FLUX.1 schnell").strip()
+        model_requested = (model_requested or "Flux1schnell").strip()
 
         resp = await request_deapi(model_requested)
         if resp.status_code >= 400:
@@ -76,7 +92,14 @@ async def generate_image(payload: GenerateRequest):
         if ct.startswith("image/"):
             image_bytes = resp.content
             encoded = base64.b64encode(image_bytes).decode("ascii")
-            return {"image_base64": encoded, "content_type": ct, "model": model_requested}
+            # attempt to determine image dimensions
+            try:
+                img = Image.open(io.BytesIO(image_bytes))
+                w, h = img.size
+            except Exception:
+                w = payload.width or None
+                h = payload.height or None
+            return {"image_base64": encoded, "content_type": ct, "model": model_requested, "width": w, "height": h}
 
         data = resp.json()
         encoded = None
@@ -97,7 +120,7 @@ async def generate_image(payload: GenerateRequest):
         if not encoded:
             raise HTTPException(status_code=502, detail="DeAPI returned an unexpected response.")
 
-        return {"image_base64": encoded, "content_type": "image/png", "model": model_requested}
+        return {"image_base64": encoded, "content_type": "image/png", "model": model_requested, "width": payload.width, "height": payload.height}
     except HTTPException:
         raise
     except Exception:

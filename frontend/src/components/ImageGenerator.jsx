@@ -5,7 +5,10 @@ const API_BASE = import.meta.env.VITE_API_URL || '';
 export default function ImageGenerator() {
   const [prompt, setPrompt] = useState('');
   const [negativePrompt, setNegativePrompt] = useState('');
-  const [model, setModel] = useState('FLUX.1 schnell');
+  const [model, setModel] = useState('Flux1schnell');
+  const [width, setWidth] = useState(768);
+  const [height, setHeight] = useState(768);
+  const [steps, setSteps] = useState(4);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
   const [error, setError] = useState('');
@@ -21,9 +24,9 @@ export default function ImageGenerator() {
   ];
 
   const modelOptions = [
-    { value: 'FLUX.2 Klein 4B BF16', label: 'FLUX.2 Klein 4B BF16' },
-    { value: 'Z-Image-Turbo INT8', label: 'Z-Image-Turbo INT8' },
-    { value: 'FLUX.1 schnell', label: 'FLUX.1 schnell' },
+    { value: 'Flux_2_Klein_4B_BF16', label: 'FLUX.2 Klein 4B BF16' },
+    { value: 'ZImageTurbo_INT8', label: 'Z-Image-Turbo INT8' },
+    { value: 'Flux1schnell', label: 'FLUX.1 Schnell' },
   ];
 
   useEffect(() => {
@@ -60,8 +63,11 @@ export default function ImageGenerator() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           prompt: prompt.trim(),
-          negative_prompt: negativePrompt.trim() || undefined,
           model,
+          width: Number(width),
+          height: Number(height),
+          steps: Number(steps),
+          negative_prompt: negativePrompt.trim() || undefined,
         }),
         signal: controller.signal,
       });
@@ -183,6 +189,29 @@ export default function ImageGenerator() {
                 </select>
                 <p className="mt-2 text-xs" style={{ color: 'var(--text-secondary)' }}>
                   Choose the DeAPI free model to use for generation.
+                </p>
+              </div>
+
+              <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                <label className="block text-xs uppercase tracking-wider mb-2" style={{ color: 'var(--text-secondary)' }}>
+                  Size
+                </label>
+                <div className="flex gap-2">
+                  <input type="number" value={width} onChange={(e)=>setWidth(Number(e.target.value))} className="w-1/2 rounded-xl p-3 text-sm bg-transparent border border-white/10" />
+                  <input type="number" value={height} onChange={(e)=>setHeight(Number(e.target.value))} className="w-1/2 rounded-xl p-3 text-sm bg-transparent border border-white/10" />
+                </div>
+                <p className="mt-2 text-xs" style={{ color: 'var(--text-secondary)' }}>
+                  Width and height in pixels (min 256).
+                </p>
+              </div>
+
+              <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                <label className="block text-xs uppercase tracking-wider mb-2" style={{ color: 'var(--text-secondary)' }}>
+                  Steps
+                </label>
+                <input type="number" value={steps} onChange={(e)=>setSteps(Number(e.target.value))} className="w-full rounded-xl p-3 text-sm bg-transparent border border-white/10" />
+                <p className="mt-2 text-xs" style={{ color: 'var(--text-secondary)' }}>
+                  Number of diffusion steps (recommended 4-50).
                 </p>
               </div>
 
