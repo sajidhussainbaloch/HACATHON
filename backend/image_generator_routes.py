@@ -104,6 +104,7 @@ async def generate_image(payload: GenerateRequest):
         data = resp.json()
         encoded = None
         if isinstance(data, dict):
+            # Check for direct base64 fields
             if data.get("image_base64"):
                 encoded = data.get("image_base64")
             elif data.get("base64"):
@@ -116,9 +117,26 @@ async def generate_image(payload: GenerateRequest):
                 first = data.get("artifacts")[0]
                 if isinstance(first, dict) and first.get("base64"):
                     encoded = first.get("base64")
+            # Check for data.image or data.output fields
+            elif data.get("data") and isinstance(data.get("data"), dict):
+                inner = data.get("data")
+                if inner.get("image"):
+                    encoded = inner.get("image")
+                elif inner.get("output"):
+                    encoded = inner.get("output")
+                elif inner.get("base64"):
+                    encoded = inner.get("base64")
+            # Check for output field at root
+            elif data.get("output"):
+                encoded = data.get("output")
+            elif data.get("image"):
+                encoded = data.get("image")
 
         if not encoded:
-            raise HTTPException(status_code=502, detail="DeAPI returned an unexpected response.")
+            # Include first 500 chars of response for debugging
+            import json
+            resp_preview = json.dumps(data)[:500]
+            raise HTTPException(status_code=502, detail=f"DeAPI returned unexpected response: {resp_preview}")
 
         return {"image_base64": encoded, "content_type": "image/png", "model": model_requested, "width": payload.width, "height": payload.height}
     except HTTPException:
