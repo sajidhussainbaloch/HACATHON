@@ -8,6 +8,7 @@ from __future__ import annotations
 import base64
 import io
 import os
+import random
 from typing import Optional
 
 import httpx
@@ -58,18 +59,17 @@ async def generate_image(payload: GenerateRequest):
     }
 
     async def request_deapi(model_name: str):
-        body: dict = {"model": model_name, "prompt": prompt}
+        # DeAPI requires: prompt, model, width, height, seed, steps
+        body: dict = {
+            "model": model_name,
+            "prompt": prompt,
+            "width": int(payload.width) if payload.width else 768,
+            "height": int(payload.height) if payload.height else 768,
+            "seed": int(payload.seed) if payload.seed is not None else random.randint(0, 2147483647),
+            "steps": int(payload.steps) if payload.steps else 4,
+        }
         if negative_prompt:
             body["negative_prompt"] = negative_prompt
-        # include optional image parameters if provided
-        if getattr(payload, "width", None):
-            body["width"] = int(payload.width)
-        if getattr(payload, "height", None):
-            body["height"] = int(payload.height)
-        if getattr(payload, "seed", None) is not None:
-            body["seed"] = int(payload.seed)
-        if getattr(payload, "steps", None) is not None:
-            body["steps"] = int(payload.steps)
 
         async with httpx.AsyncClient(timeout=120.0) as client:
             # The working client endpoint for your account is /client/txt2img
