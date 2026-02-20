@@ -14,9 +14,7 @@
     }
   ],
   "routes": [
-    { "src": "/analyze", "dest": "/api/index.py", "methods": ["POST", "OPTIONS"] },
-    { "src": "/auth/(.*)", "dest": "/api/index.py" },
-    { "src": "/health", "dest": "/api/index.py" },
+    { "src": "/api/(.*)", "dest": "/api/index.py", "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"] },
     { "src": "/(.*)", "dest": "/frontend/$1" }
   ]
 }
