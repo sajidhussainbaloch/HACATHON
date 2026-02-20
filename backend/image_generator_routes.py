@@ -19,7 +19,9 @@ router = APIRouter(prefix="/api/image", tags=["image-generator"])
 
 HF_API_KEY = os.getenv("HF_API_KEY")
 # Prioritized free/default HF models to try (in order).
+# Added `black-forest-labs/FLUX.1-Krea-dev` which is often available via inference providers.
 HF_FALLBACK_MODELS = [
+    "black-forest-labs/FLUX.1-Krea-dev",
     "runwayml/stable-diffusion-v1-5",
     "stabilityai/stable-diffusion-2-1",
     "nitrosocke/anything-midjourney-v6",
@@ -44,12 +46,23 @@ async def generate_image(payload: GenerateRequest):
     headers = {"Authorization": f"Bearer {HF_API_KEY}"}
 
     async def request_model(model_id: str):
-        endpoint = f"https://api-inference.huggingface.co/models/{model_id}"
+        # Try the Hugging Face router endpoint first — some models are hosted by
+        # specific inference providers and the router can route to working providers.
+        router_endpoint = f"https://router.huggingface.co/hf-inference/models/{model_id}"
+        direct_endpoint = f"https://api-inference.huggingface.co/models/{model_id}"
         request_body = {"inputs": prompt}
         if negative_prompt:
             request_body["parameters"] = {"negative_prompt": negative_prompt}
         async with httpx.AsyncClient(timeout=30.0) as client:
-            return await client.post(endpoint, headers=headers, json=request_body)
+            # First try router
+            try:
+                r = await client.post(router_endpoint, headers=headers, json=request_body)
+            except Exception:
+                r = None
+            # If router returned 410/404 or failed, fallback to the direct inference endpoint
+            if r is None or (r.status_code in {404, 410}):
+                return await client.post(direct_endpoint, headers=headers, json=request_body)
+            return r
 
     try:
         attempts = []
