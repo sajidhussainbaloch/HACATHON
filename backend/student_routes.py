@@ -36,7 +36,7 @@ FREE_MODELS = [
 
 MAX_CONTEXT_CHARS = 7000
 MAX_OUTPUT_TOKENS_ASK = 280
-MAX_OUTPUT_TOKENS_GENERATE = 520
+MAX_OUTPUT_TOKENS_GENERATE = 800
 MAX_FILE_CHARS = 70000
 CHUNK_TARGET_TOKENS = 500
 CHUNK_OVERLAP_TOKENS = 60
@@ -142,23 +142,26 @@ def _fallback_generate(mode: str, chunks: list[dict]) -> dict:
         return {"flashcards": cards}
 
     if mode == "mcq":
-        sentences = _split_sentences(combined)[:4]
-        options = [
-            _concept_from_sentence(sentence) for sentence in sentences
-        ]
-        while len(options) < 4:
-            options.append("Not mentioned")
-        return {
-            "mcqs": [
+        sentences = _split_sentences(combined)[:10]
+        mcqs = []
+        for i, sentence in enumerate(sentences[:7]):
+            concepts = [_concept_from_sentence(s) for s in sentences if s != sentence]
+            options = {
+                "A": _concept_from_sentence(sentence),
+                "B": concepts[0] if len(concepts) > 0 else "Unrelated topic",
+                "C": concepts[1] if len(concepts) > 1 else "Not mentioned",
+                "D": concepts[2] if len(concepts) > 2 else "Alternative concept",
+            }
+            mcqs.append(
                 {
-                    "question": "Which concept is discussed in the notes?",
-                    "options": {"A": options[0], "B": options[1], "C": options[2], "D": options[3]},
+                    "question": f"What is the primary subject of: '{sentence[:80]}...'?",
+                    "options": options,
                     "correct": "A",
-                    "explanation": base_summary or "Refer to the uploaded notes.",
+                    "explanation": sentence,
                     "evidence_chunk_ids": chunk_ids,
                 }
-            ]
-        }
+            )
+        return {"mcqs": mcqs if mcqs else [{"question": "Sample MCQ", "options": {"A": "A", "B": "B", "C": "C", "D": "D"}, "correct": "A", "explanation": "Refer to notes.", "evidence_chunk_ids": chunk_ids}]}
 
     if mode == "viva":
         questions = []
@@ -612,11 +615,39 @@ async def student_generate(payload: GenerateRequest):
 {
   "mcqs": [
     {
-      "question":"...",
-      "options":{"A":"...","B":"...","C":"...","D":"..."},
+      "question":"question 1",
+      "options":{"A":"option A","B":"option B","C":"option C","D":"option D"},
       "correct":"A",
-      "explanation":"...",
+      "explanation":"why A is correct",
       "evidence_chunk_ids":[1]
+    },
+    {
+      "question":"question 2",
+      "options":{"A":"option A","B":"option B","C":"option C","D":"option D"},
+      "correct":"B",
+      "explanation":"why B is correct",
+      "evidence_chunk_ids":[2]
+    },
+    {
+      "question":"question 3",
+      "options":{"A":"option A","B":"option B","C":"option C","D":"option D"},
+      "correct":"C",
+      "explanation":"why C is correct",
+      "evidence_chunk_ids":[3]
+    },
+    {
+      "question":"question 4",
+      "options":{"A":"option A","B":"option B","C":"option C","D":"option D"},
+      "correct":"D",
+      "explanation":"why D is correct",
+      "evidence_chunk_ids":[1]
+    },
+    {
+      "question":"question 5",
+      "options":{"A":"option A","B":"option B","C":"option C","D":"option D"},
+      "correct":"A",
+      "explanation":"why A is correct",
+      "evidence_chunk_ids":[2]
     }
   ]
 }

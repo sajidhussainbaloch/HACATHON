@@ -4,6 +4,13 @@ import {
   generateStudyTool,
   uploadStudentNotes,
 } from '../services/api';
+import CursorAnimation from '../components/CursorAnimation';
+import {
+  downloadFile,
+  formatMCQForDownload,
+  formatSummaryForDownload,
+  formatFlashcardsForDownload,
+} from '../utils/downloadHandler';
 
 const MODE_OPTIONS = [
   { value: 'summary', label: 'Executive Summary' },
@@ -31,7 +38,7 @@ export default function StudentAssistant() {
   const [question, setQuestion] = useState('');
   const [mode, setMode] = useState('summary');
 
-  const [uploadState, setUploadState] = useState({ loading: false, data: null, error: '' });
+  const [uploadState, setUploadState] = useState({ loading: false, data: null, error: '', progress: 0 });
   const [askState, setAskState] = useState({ loading: false, data: null, error: '' });
   const [generateState, setGenerateState] = useState({ loading: false, data: null, error: '' });
 
@@ -40,14 +47,118 @@ export default function StudentAssistant() {
     [mode]
   );
 
+  // Download handlers for different content types
+  const handleDownload = (content, filename, format = 'json') => {
+    try {
+      downloadFile(content, filename, format);
+    } catch (err) {
+      console.error('Download failed:', err);
+      alert('Failed to download file.');
+    }
+  };
+
+  const handleDownloadAnswers = () => {
+    const content = {
+      question: question,
+      answer: askState.data?.answer,
+      explanation: askState.data?.explanation_simple,
+      confidence: askState.data?.confidence,
+      sources: askState.data?.sources,
+    };
+    handleDownload(content, 'student-answer', 'json');
+  };
+
+  const handleDownloadMCQs = () => {
+    const mcqs = formatMCQForDownload(generateState.data?.data?.mcqs || []);
+    handleDownload(mcqs, 'mcqs', 'csv');
+  };
+
+  const handleDownloadFlashcards = () => {
+    const flashcards = formatFlashcardsForDownload(generateState.data?.data?.flashcards || []);
+    handleDownload(flashcards, 'flashcards', 'csv');
+  };
+
+  const handleDownloadSummary = () => {
+    const summary = formatSummaryForDownload(generateState.data?.data?.summary);
+    handleDownload(summary, 'summary', 'txt');
+  };
+
+  const handleDownloadKeyConcepts = () => {
+    const content = generateState.data?.data?.key_concepts || [];
+    handleDownload(content, 'key-concepts', 'json');
+  };
+
+  const handleDownloadVivaQuestions = () => {
+    const content = generateState.data?.data?.viva_questions || [];
+    handleDownload(content, 'viva-questions', 'json');
+  };
+
+  const handleDownloadConceptMap = () => {
+    const content = generateState.data?.data?.concept_relationships || [];
+    handleDownload(content, 'concept-map', 'json');
+  };
+
   const handleUpload = async (e) => {
     e.preventDefault();
-    setUploadState({ loading: true, data: null, error: '' });
+    setUploadState({ loading: true, data: null, error: '', progress: 0 });
     try {
-      const data = await uploadStudentNotes(file);
-      setUploadState({ loading: false, data, error: '' });
+      const formData = new FormData();
+      formData.append('file', file);
+
+      // Use XMLHttpRequest for progress tracking
+      const xhr = new XMLHttpRequest();
+      
+      xhr.upload.addEventListener('progress', (event) => {
+        if (event.lengthComputable) {
+          const percentComplete = Math.round((event.loaded / event.total) * 100);
+          setUploadState((prev) => ({ ...prev, progress: percentComplete }));
+        }
+      });
+
+      await new Promise((resolve, reject) => {
+        xhr.onload = () => {
+          if (xhr.status >= 200 && xhr.status < 300) {
+            try {
+              const data = JSON.parse(xhr.responseText);
+              setUploadState({ loading: false, data, error: '', progress: 100 });
+              setTimeout(() => setUploadState((prev) => ({ ...prev, progress: 0 })), 1000);
+              resolve();
+            } catch (err) {
+              reject(new Error('Invalid response format'));
+            }
+          } else {
+            try {
+              const error = JSON.parse(xhr.responseText);
+              reject(new Error(error.detail || 'Upload failed'));
+            } catch {
+              reject(new Error('Upload failed'));
+            }
+          }
+        };
+
+        xhr.onerror = () => reject(new Error('Upload failed'));
+        xhr.onabort = () => reject(new Error('Upload cancelled'));
+
+        const token = localStorage.getItem(
+          `sb-${import.meta.env.VITE_SUPABASE_URL?.split('//')[1]?.split('.')[0]}-auth-token`
+        );
+        
+        let authHeader = '';
+        if (token) {
+          try {
+            const parsed = JSON.parse(token);
+            authHeader = parsed?.access_token || parsed?.currentSession?.access_token || '';
+          } catch { /* ignore */ }
+        }
+
+        xhr.open('POST', `${import.meta.env.VITE_API_URL || ''}/student/upload`);
+        if (authHeader) {
+          xhr.setRequestHeader('Authorization', `Bearer ${authHeader}`);
+        }
+        xhr.send(formData);
+      });
     } catch (err) {
-      setUploadState({ loading: false, data: null, error: err.message || 'Upload failed.' });
+      setUploadState({ loading: false, data: null, error: err.message || 'Upload failed.', progress: 0 });
     }
   };
 
@@ -78,7 +189,9 @@ export default function StudentAssistant() {
   };
 
   return (
-    <main className="student-assistant student-assistant-page max-w-6xl mx-auto py-10 px-4 space-y-6 animate-fade-in-up">
+    <>
+      <CursorAnimation />
+      <main className="student-assistant student-assistant-page max-w-6xl mx-auto py-10 px-4 space-y-6 animate-fade-in-up">
       <div className="student-hero rounded-2xl p-6">
         <h1 className="text-3xl font-bold mb-2">
           AI Student Research Copilot
@@ -97,13 +210,27 @@ export default function StudentAssistant() {
               accept=".pdf,image/*"
               onChange={(e) => setFile(e.target.files?.[0] || null)}
               className="student-input w-full text-sm rounded-lg p-2"
+              disabled={uploadState.loading}
             />
+            {uploadState.progress > 0 && uploadState.progress < 100 && (
+              <div className="w-full bg-gray-300 dark:bg-gray-600 rounded-lg h-2 overflow-hidden">
+                <div
+                  className="bg-cyan-500 h-full transition-all duration-300 shadow-lg shadow-cyan-500/50"
+                  style={{ width: `${uploadState.progress}%` }}
+                />
+              </div>
+            )}
+            {uploadState.progress > 0 && uploadState.progress < 100 && (
+              <p className="text-xs text-gray-600 dark:text-gray-400">
+                Uploading: {uploadState.progress}%
+              </p>
+            )}
             <button
               type="submit"
               disabled={uploadState.loading || !file}
               className="student-button student-button-primary"
             >
-              {uploadState.loading ? 'Uploading...' : 'Upload & Index'}
+              {uploadState.loading ? `Uploading... ${uploadState.progress}%` : 'Upload & Index'}
             </button>
           </form>
           {uploadState.error && <p className="mt-3 text-sm text-red-500">{uploadState.error}</p>}
@@ -164,9 +291,17 @@ export default function StudentAssistant() {
 
         {askState.data && (
           <div className="space-y-3">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between flex-wrap gap-2">
               <h3 className="font-semibold">Structured Answer</h3>
-              <ConfidenceBadge value={askState.data.confidence || 0} />
+              <div className="flex items-center gap-2">
+                <ConfidenceBadge value={askState.data.confidence || 0} />
+                <button
+                  onClick={handleDownloadAnswers}
+                  className="px-3 py-1 text-xs font-semibold bg-cyan-500/20 text-cyan-600 border border-cyan-500/50 rounded hover:bg-cyan-500/30 transition"
+                >
+                  ↓ Download
+                </button>
+              </div>
             </div>
             <div className="student-panel rounded-lg p-4">
               <p className="text-sm mb-3 whitespace-pre-wrap">{askState.data.answer}</p>
@@ -194,14 +329,30 @@ export default function StudentAssistant() {
 
         {generateState.data?.data?.summary && (
           <div className="student-panel rounded-lg p-4">
-            <h3 className="font-semibold mb-2">Executive Summary</h3>
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="font-semibold">Executive Summary</h3>
+              <button
+                onClick={handleDownloadSummary}
+                className="px-3 py-1 text-xs font-semibold bg-cyan-500/20 text-cyan-600 border border-cyan-500/50 rounded hover:bg-cyan-500/30 transition"
+              >
+                ↓ Download
+              </button>
+            </div>
             <p className="text-sm whitespace-pre-wrap">{generateState.data.data.summary}</p>
           </div>
         )}
 
         {Array.isArray(generateState.data?.data?.flashcards) && (
           <div>
-            <h3 className="font-semibold mb-2">Flashcards</h3>
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="font-semibold">Flashcards</h3>
+              <button
+                onClick={handleDownloadFlashcards}
+                className="px-3 py-1 text-xs font-semibold bg-cyan-500/20 text-cyan-600 border border-cyan-500/50 rounded hover:bg-cyan-500/30 transition"
+              >
+                ↓ Download
+              </button>
+            </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               {generateState.data.data.flashcards.map((card, idx) => (
                 <div key={`${card.question}-${idx}`} className="student-panel rounded-lg p-4">
@@ -217,7 +368,15 @@ export default function StudentAssistant() {
 
         {Array.isArray(generateState.data?.data?.mcqs) && (
           <div>
-            <h3 className="font-semibold mb-2">MCQs</h3>
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="font-semibold">MCQs</h3>
+              <button
+                onClick={handleDownloadMCQs}
+                className="px-3 py-1 text-xs font-semibold bg-cyan-500/20 text-cyan-600 border border-cyan-500/50 rounded hover:bg-cyan-500/30 transition"
+              >
+                ↓ Download
+              </button>
+            </div>
             <div className="space-y-3">
               {generateState.data.data.mcqs.map((item, idx) => (
                 <div key={`${item.question}-${idx}`} className="student-panel rounded-lg p-4">
@@ -237,7 +396,15 @@ export default function StudentAssistant() {
 
         {Array.isArray(generateState.data?.data?.key_concepts) && (
           <div>
-            <h3 className="font-semibold mb-2">Key Concepts</h3>
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="font-semibold">Key Concepts</h3>
+              <button
+                onClick={handleDownloadKeyConcepts}
+                className="px-3 py-1 text-xs font-semibold bg-cyan-500/20 text-cyan-600 border border-cyan-500/50 rounded hover:bg-cyan-500/30 transition"
+              >
+                ↓ Download
+              </button>
+            </div>
             <ul className="space-y-2">
               {generateState.data.data.key_concepts.map((item, idx) => (
                 <li key={`${item.concept}-${idx}`} className="student-panel rounded-lg p-3 text-sm">
@@ -251,7 +418,15 @@ export default function StudentAssistant() {
 
         {Array.isArray(generateState.data?.data?.viva_questions) && (
           <div>
-            <h3 className="font-semibold mb-2">Viva Questions</h3>
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="font-semibold">Viva Questions</h3>
+              <button
+                onClick={handleDownloadVivaQuestions}
+                className="px-3 py-1 text-xs font-semibold bg-cyan-500/20 text-cyan-600 border border-cyan-500/50 rounded hover:bg-cyan-500/30 transition"
+              >
+                ↓ Download
+              </button>
+            </div>
             <ul className="space-y-2">
               {generateState.data.data.viva_questions.map((item, idx) => (
                 <li key={`${item.question}-${idx}`} className="student-panel rounded-lg p-3 text-sm">
@@ -265,7 +440,15 @@ export default function StudentAssistant() {
 
         {Array.isArray(generateState.data?.data?.concept_relationships) && (
           <div>
-            <h3 className="font-semibold mb-2">Concept Relationships</h3>
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="font-semibold">Concept Relationships</h3>
+              <button
+                onClick={handleDownloadConceptMap}
+                className="px-3 py-1 text-xs font-semibold bg-cyan-500/20 text-cyan-600 border border-cyan-500/50 rounded hover:bg-cyan-500/30 transition"
+              >
+                ↓ Download
+              </button>
+            </div>
             <ul className="space-y-2">
               {generateState.data.data.concept_relationships.map((item, idx) => (
                 <li key={`${item.concept_a}-${item.concept_b}-${idx}`} className="student-panel rounded-lg p-3 text-sm">
@@ -280,5 +463,6 @@ export default function StudentAssistant() {
         )}
       </section>
     </main>
+    </>
   );
 }
