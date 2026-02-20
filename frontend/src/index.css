@@ -24,6 +24,14 @@
   --border-color: #334155;
 }
 
+.dark .student-assistant-page {
+  --bg-primary: #0a1428;
+  --bg-card: #1a2742;
+  --text-primary: #f8fafc;
+  --text-secondary: #cbd5e1;
+  --border-color: #2d3e52;
+}
+
 body {
   background-color: var(--bg-primary);
   color: var(--text-primary);
@@ -115,6 +123,11 @@ h1, h2, h3, h4 {
   color: var(--text-primary);
 }
 
+.dark .student-hero {
+  background: linear-gradient(120deg, rgba(6, 182, 212, 0.15), rgba(249, 115, 22, 0.15));
+  border: 1px solid rgba(6, 182, 212, 0.25);
+}
+
 .student-hero p {
   color: var(--text-secondary);
 }
@@ -125,15 +138,36 @@ h1, h2, h3, h4 {
   box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
 }
 
+.dark .student-card {
+  background: #1f3a52;
+  border: 1px solid rgba(71, 207, 230, 0.2);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+}
+
 .student-panel {
   background: #f8fafc;
   border: 1px solid rgba(15, 23, 42, 0.1);
+}
+
+.dark .student-panel {
+  background: #152a3f;
+  border: 1px solid rgba(71, 207, 230, 0.15);
 }
 
 .student-input {
   border: 1px solid rgba(15, 23, 42, 0.16);
   background: #ffffff;
   color: var(--text-primary);
+}
+
+.dark .student-input {
+  border: 1px solid rgba(71, 207, 230, 0.3);
+  background: #0f2437;
+  color: #f1f5f9;
+}
+
+.dark .student-input::placeholder {
+  color: #7c95a8;
 }
 
 .student-button {
@@ -146,9 +180,19 @@ h1, h2, h3, h4 {
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
+.dark .student-button {
+  color: #f1f5f9;
+  background: linear-gradient(120deg, #1a3a52, #152a3f);
+  border: 1px solid rgba(71, 207, 230, 0.25);
+}
+
 .student-button:hover {
   transform: translateY(-1px);
   box-shadow: 0 8px 18px rgba(15, 23, 42, 0.12);
+}
+
+.dark .student-button:hover {
+  box-shadow: 0 8px 18px rgba(6, 182, 212, 0.2);
 }
 
 .student-button:disabled {
@@ -162,9 +206,19 @@ h1, h2, h3, h4 {
   background: linear-gradient(120deg, rgba(14, 165, 233, 0.25), rgba(14, 165, 233, 0.1));
 }
 
+.dark .student-button-primary {
+  color: #f1f5f9;
+  background: linear-gradient(120deg, rgba(6, 182, 212, 0.3), rgba(6, 182, 212, 0.15));
+}
+
 .student-button-accent {
   color: #0f172a;
   background: linear-gradient(120deg, rgba(16, 185, 129, 0.25), rgba(16, 185, 129, 0.1));
+}
+
+.dark .student-button-accent {
+  color: #f1f5f9;
+  background: linear-gradient(120deg, rgba(34, 197, 94, 0.3), rgba(34, 197, 94, 0.15));
 }
 
 .student-subtle {
@@ -173,4 +227,99 @@ h1, h2, h3, h4 {
 
 .student-divider {
   border-color: rgba(15, 23, 42, 0.1);
+}
+
+.dark .student-divider {
+  border-color: rgba(71, 207, 230, 0.15);
+}
+
+/* ── Responsive Student Assistant ────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .student-assistant-page {
+    padding: 1rem;
+  }
+
+  .student-hero {
+    padding: 1rem;
+    border-radius: 1rem;
+  }
+
+  .student-hero h1 {
+    font-size: 1.5rem;
+  }
+
+  .student-card {
+    padding: 1rem;
+    border-radius: 0.875rem;
+  }
+
+  .student-card h2 {
+    font-size: 1rem;
+  }
+
+  .student-panel {
+    padding: 0.75rem;
+  }
+
+  .student-button {
+    padding: 0.5rem 0.875rem;
+    font-size: 0.875rem;
+  }
+
+  form textarea {
+    font-size: 1rem;
+  }
+
+  @supports (-webkit-touch-callout: none) {
+    form textarea {
+      font-size: 16px;
+    }
+  }
+}
+
+@media (max-width: 480px) {
+  .student-hero {
+    padding: 0.875rem;
+    margin-bottom: 1rem;
+  }
+
+  .student-hero h1 {
+    font-size: 1.25rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .student-hero p {
+    font-size: 0.8rem;
+  }
+
+  .grid {
+    gap: 1rem;
+  }
+
+  .student-card {
+    padding: 0.875rem;
+  }
+
+  .student-card h2 {
+    font-size: 0.95rem;
+  }
+
+  .student-panel {
+    padding: 0.6rem;
+    font-size: 0.85rem;
+  }
+
+  .student-button {
+    padding: 0.4rem 0.75rem;
+    font-size: 0.8rem;
+    width: 100%;
+  }
+
+  form {
+    gap: 0.5rem;
+  }
+
+  .flex.flex-col.sm\:flex-row {
+    flex-direction: column;
+  }
 }
