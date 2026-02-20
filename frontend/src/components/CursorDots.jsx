@@ -1,11 +1,24 @@
 import { useEffect, useRef } from 'react';
 
-export default function CursorAnimation() {
+export default function CursorDots() {
   const canvasRef = useRef(null);
   const mousePos = useRef({ x: 0, y: 0 });
   const particles = useRef([]);
+  const lastActivityTime = useRef(Date.now());
+  const isMobileRef = useRef(false);
 
   useEffect(() => {
+    // Detect mobile/touch devices
+    const isMobile =
+      /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+        navigator.userAgent
+      ) || window.matchMedia('(max-width: 768px)').matches;
+
+    isMobileRef.current = isMobile;
+
+    if (isMobile) return; // Disable on mobile
+
+    // Create canvas
     const canvas = document.createElement('canvas');
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
@@ -13,12 +26,12 @@ export default function CursorAnimation() {
     canvas.style.top = '0';
     canvas.style.left = '0';
     canvas.style.pointerEvents = 'none';
-    canvas.style.zIndex = '9999';
+    canvas.style.zIndex = '9998';
     document.body.appendChild(canvas);
     canvasRef.current = canvas;
 
     const ctx = canvas.getContext('2d');
-    const particleCount = 20;
+    const particleCount = 18;
 
     // Initialize particles
     particles.current = Array.from({ length: particleCount }, (_, i) => ({
@@ -28,14 +41,15 @@ export default function CursorAnimation() {
       targetY: window.innerHeight / 2,
       vx: 0,
       vy: 0,
-      radius: 3 - (i / particleCount) * 2.5,
-      delay: i * 0.02,
-      opacity: 1 - (i / particleCount) * 0.7,
+      radius: 2 - (i / particleCount) * 1.5,
+      index: i,
+      baseOpacity: 0.6 - (i / particleCount) * 0.5,
     }));
 
     // Mouse tracking
     const handleMouseMove = (e) => {
       mousePos.current = { x: e.clientX, y: e.clientY };
+      lastActivityTime.current = Date.now();
     };
 
     // Window resize
@@ -47,64 +61,66 @@ export default function CursorAnimation() {
     // Animation loop
     let animationId;
     const animate = () => {
+      const now = Date.now();
+      const timeSinceActivity = now - lastActivityTime.current;
+      const isIdle = timeSinceActivity > 1000;
+      const fadeOutAlpha = isIdle ? Math.max(0, 1 - (timeSinceActivity - 1000) / 500) : 1;
+
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      // Update and draw particles
       particles.current.forEach((particle, i) => {
         const isFirst = i === 0;
-        
+
         if (isFirst) {
-          // First particle follows mouse directly
           particle.targetX = mousePos.current.x;
           particle.targetY = mousePos.current.y;
         } else {
-          // Other particles follow the previous particle
           const prevParticle = particles.current[i - 1];
           particle.targetX = prevParticle.x;
           particle.targetY = prevParticle.y;
         }
 
-        // Smooth easing towards target
-        const easing = 0.25;
+        // Smooth easing (slower, more elegant)
+        const easing = 0.15; // Reduced from 0.25 for slower movement
         particle.vx += (particle.targetX - particle.x) * easing;
         particle.vy += (particle.targetY - particle.y) * easing;
 
-        // Friction
-        particle.vx *= 0.85;
-        particle.vy *= 0.85;
+        // Friction (more damping for smoother feel)
+        particle.vx *= 0.88;
+        particle.vy *= 0.88;
 
-        // Update position
         particle.x += particle.vx;
         particle.y += particle.vy;
 
-        // Calculate opacity with distance-based glow
+        // Calculate opacity
         const distance = Math.sqrt(particle.vx ** 2 + particle.vy ** 2);
-        const dynamicOpacity = particle.opacity * (0.5 + Math.min(distance / 5, 0.5));
+        const speedOpacity = 0.3 + Math.min(distance / 8, 0.7);
+        const finalOpacity = particle.baseOpacity * speedOpacity * fadeOutAlpha;
 
-        // Draw particle with glow effect
+        // Draw smooth circle
         ctx.save();
-        ctx.globalAlpha = dynamicOpacity;
+        ctx.globalAlpha = finalOpacity;
 
-        // Glow
-        const gradient = ctx.createRadialGradient(
+        // Soft glow
+        const glowGradient = ctx.createRadialGradient(
           particle.x,
           particle.y,
           0,
           particle.x,
           particle.y,
-          particle.radius * 3
+          particle.radius * 2.5
         );
-        gradient.addColorStop(0, 'rgba(6, 182, 212, 0.8)');
-        gradient.addColorStop(1, 'rgba(6, 182, 212, 0)');
-        ctx.fillStyle = gradient;
+        glowGradient.addColorStop(0, 'rgba(6, 182, 212, 0.6)');
+        glowGradient.addColorStop(1, 'rgba(6, 182, 212, 0)');
+        ctx.fillStyle = glowGradient;
         ctx.beginPath();
-        ctx.arc(particle.x, particle.y, particle.radius * 3, 0, Math.PI * 2);
+        ctx.arc(particle.x, particle.y, particle.radius * 2.5, 0, Math.PI * 2);
         ctx.fill();
 
-        // Core
-        ctx.fillStyle = `rgba(6, 182, 212, ${dynamicOpacity})`;
+        // Core dot
+        ctx.fillStyle = `rgba(6, 182, 212, ${finalOpacity * 0.8})`;
         ctx.beginPath();
-        ctx.arc(particle.x, particle.y, particle.radius, 0, Math.PI * 2);
+        ctx.arc(particle.x, particle.y, particle.radius * 0.8, 0, Math.PI * 2);
         ctx.fill();
 
         ctx.restore();
