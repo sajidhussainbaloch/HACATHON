@@ -5,6 +5,7 @@ const API_BASE = import.meta.env.VITE_API_URL || '';
 export default function ImageGenerator() {
   const [prompt, setPrompt] = useState('');
   const [negativePrompt, setNegativePrompt] = useState('');
+  const [model, setModel] = useState('FLUX.1 schnell');
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
   const [error, setError] = useState('');
@@ -17,6 +18,12 @@ export default function ImageGenerator() {
     'Minimalist product photo, soft studio lighting, clean background',
     'Surreal floating islands above clouds, ethereal glow, fantasy art',
     'Macro photograph of a crystal flower, hyper-real, shallow depth of field',
+  ];
+
+  const modelOptions = [
+    { value: 'FLUX.2 Klein 4B BF16', label: 'FLUX.2 Klein 4B BF16' },
+    { value: 'Z-Image-Turbo INT8', label: 'Z-Image-Turbo INT8' },
+    { value: 'FLUX.1 schnell', label: 'FLUX.1 schnell' },
   ];
 
   useEffect(() => {
@@ -54,6 +61,7 @@ export default function ImageGenerator() {
         body: JSON.stringify({
           prompt: prompt.trim(),
           negative_prompt: negativePrompt.trim() || undefined,
+          model,
         }),
         signal: controller.signal,
       });
@@ -155,6 +163,27 @@ export default function ImageGenerator() {
                     </button>
                   ))}
                 </div>
+              </div>
+
+              <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                <label className="block text-xs uppercase tracking-wider mb-2" style={{ color: 'var(--text-secondary)' }}>
+                  Model
+                </label>
+                <select
+                  value={model}
+                  onChange={(event) => setModel(event.target.value)}
+                  className="w-full rounded-xl p-3 text-sm bg-transparent border border-white/10 focus:outline-none focus:border-indigo-400"
+                  style={{ color: 'var(--text-primary)' }}
+                >
+                  {modelOptions.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+                <p className="mt-2 text-xs" style={{ color: 'var(--text-secondary)' }}>
+                  Choose the DeAPI free model to use for generation.
+                </p>
               </div>
 
 
