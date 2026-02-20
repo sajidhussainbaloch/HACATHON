@@ -28,14 +28,12 @@ from services.auth import (
     get_user_profile,
     update_user_profile,
     get_current_user,
-    google_auth,
     SignupRequest,
     VerifyOTPRequest,
     LoginRequest,
     ForgotPasswordRequest,
     ResetPasswordRequest,
     UpdateProfileRequest,
-    GoogleAuthRequest,
 )
 
 
@@ -128,12 +126,6 @@ async def profile(user = Depends(get_current_user)):
 async def update_profile(req: UpdateProfileRequest, user = Depends(get_current_user), db: Session = Depends(get_db)):
     """Update current user profile (protected route)."""
     return await update_user_profile(req, user, db)
-
-
-@app.post("/auth/google")
-async def google_login(req: GoogleAuthRequest, db: Session = Depends(get_db)):
-    """Authenticate with Google OAuth. Creates account if new user."""
-    return await google_auth(req, db)
 
 
 # ── Health check ──────────────────────────────────────────────────────────────

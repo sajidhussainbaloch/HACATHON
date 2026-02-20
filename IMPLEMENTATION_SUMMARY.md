@@ -185,8 +185,6 @@ npm run dev
 
 ```
 DATABASE_URL=postgresql://postgres:YOUR_DB_PASSWORD@db.YOUR_PROJECT_ID.supabase.co:6543/postgres
-GOOGLE_CLIENT_ID=YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com
-GOOGLE_CLIENT_SECRET=YOUR_GOOGLE_CLIENT_SECRET
 SECRET_KEY=YOUR_SECRET_KEY_FROM_BACKEND_ENV
 CLOUDFLARE_ACCOUNT_ID=YOUR_CLOUDFLARE_ID
 CLOUDFLARE_API_TOKEN=YOUR_CLOUDFLARE_TOKEN
@@ -199,7 +197,10 @@ FROM_EMAIL=your_email@gmail.com
 FROM_NAME=RealityCheck AI
 ```
 
-**⚠️ CRITICAL:** Use **port 6543** (connection pooler) not 5432!
+**⚠️ CRITICAL:** 
+- Use **port 6543** (connection pooler) not 5432!
+- **Do NOT add Google credentials** - configure them in Supabase Dashboard instead!
+- All variables must be set before redeploy
 
 ---
 
@@ -275,6 +276,9 @@ A: The user sees an error. They can still use email/password login.
 
 **Q: Are there any breaking changes?**
 A: No! All existing auth flows work the same. Google OAuth is additive.
+
+**Q: Why configure Google in Supabase instead of Vercel?**
+A: It's cleaner, more secure, and all auth flows go through one service. No credentials scattered across Vercel.
 
 **Q: How do I migrate existing users?**
 A: Existing SQLite data must be manually migrated to Supabase. For now, users start fresh.

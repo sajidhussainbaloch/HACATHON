@@ -47,7 +47,9 @@ This guide walks you through setting up Supabase (PostgreSQL + Auth) and deployi
 
 ---
 
-### 🔐 **Step 4: Set Up Google OAuth**
+### 🔐 **Step 4: Set Up Google OAuth (via Supabase)**
+
+Supabase handles Google OAuth for you! Follow these steps:
 
 1. Go to [Google Cloud Console](https://console.cloud.google.com)
 2. Create a new project (or select existing)
@@ -60,15 +62,21 @@ This guide walks you through setting up Supabase (PostgreSQL + Auth) and deployi
    - Click **"Create Credentials"** → **"OAuth client ID"**
    - Choose **"Web application"**
    - Add **Authorized JavaScript origins:**
-     - `http://localhost:5173` (local dev)
-     - `http://localhost:3000` (if you run on 3000)
-     - `https://your-domain.vercel.app` (production)
+     - `https://[YOUR_PROJECT_ID].supabase.co` (Supabase domain)
    - Add **Authorized redirect URIs:**
-     - `http://localhost:5173` (local dev)
-     - `http://localhost:3000` (local alt)
-     - `https://your-domain.vercel.app` (production)
+     - `https://[YOUR_PROJECT_ID].supabase.co/auth/v1/callback` (Supabase callback)
    - Click **"Create"**
 5. Copy the **Client ID** and **Client Secret**
+
+6. **Configure in Supabase:**
+   - Go to your Supabase Dashboard
+   - Click **"Authentication"** (left sidebar)
+   - Click **"Providers"** → **"Google"**
+   - Paste **Client ID** and **Client Secret**
+   - Toggle **"Enabled"** to ON
+   - Click **"Save"**
+
+**✅ Done!** Supabase now handles all Google OAuth flows.
 
 ---
 
@@ -77,8 +85,6 @@ This guide walks you through setting up Supabase (PostgreSQL + Auth) and deployi
 #### **`backend/.env`**
 ```dotenv
 DATABASE_URL=postgresql://postgres:YOUR_PASSWORD@db.YOUR_PROJECT_ID.supabase.co:6543/postgres
-GOOGLE_CLIENT_ID=YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com
-GOOGLE_CLIENT_SECRET=YOUR_GOOGLE_CLIENT_SECRET
 SECRET_KEY=your_secure_secret_key_here
 CLOUDFLARE_ACCOUNT_ID=your_cloudflare_id
 CLOUDFLARE_API_TOKEN=your_cloudflare_token
@@ -91,11 +97,15 @@ FROM_EMAIL=your_email@gmail.com
 FROM_NAME=RealityCheck AI
 ```
 
+**Note:** `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` are NOT needed in backend - they're configured in Supabase!
+
 #### **`frontend/.env.local`** (or `.env`)
 ```dotenv
 VITE_API_URL=http://localhost:8000
 VITE_GOOGLE_CLIENT_ID=YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com
 ```
+
+**Note:** Frontend still needs the Google Client ID for the login button (this is safe - it's a public credential)
 
 ---
 
@@ -158,8 +168,6 @@ Add these variables (Critical for serverless):
 
 ```
 DATABASE_URL=postgresql://postgres:YOUR_PASSWORD@db.YOUR_PROJECT_ID.supabase.co:6543/postgres
-GOOGLE_CLIENT_ID=YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com
-GOOGLE_CLIENT_SECRET=YOUR_GOOGLE_CLIENT_SECRET
 SECRET_KEY=your_secure_key
 CLOUDFLARE_ACCOUNT_ID=your_id
 CLOUDFLARE_API_TOKEN=your_token
@@ -174,6 +182,7 @@ FROM_NAME=RealityCheck AI
 
 **⚠️ IMPORTANT:** Make sure to:
 - Use the **Connection Pooler URL** (port 6543) for serverless
+- **Do NOT add Google credentials** - they're already in Supabase!
 - All variables must be set before redeploy
 - Redeploy after adding env vars
 

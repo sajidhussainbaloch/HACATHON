@@ -12,6 +12,4 @@ psycopg2-binary
 bcrypt
 python-jose[cryptography]
 pydantic[email]
-google-auth
-google-auth-httplib2
 requests

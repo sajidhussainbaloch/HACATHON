@@ -24,25 +24,30 @@ Use this checklist to collect all required values before deploying.
 
 ---
 
-## ② Google OAuth Credentials
+## ② Google OAuth (via Supabase)
 
-**How to get them:**
+**Supabase handles Google OAuth for you!** No need to manage credentials in Vercel.
+
+**How to set it up:**
 1. Go to [Google Cloud Console](https://console.cloud.google.com)
 2. Create/select a project
 3. Enable **Google+ API** and **Google Sign-In API**
 4. Go to **Credentials** → Create **OAuth 2.0 Client ID** (Web application)
-5. Add authorized origins and redirect URIs:
-   - Local: `http://localhost:5173`, `http://localhost:3000`
-   - Production: `https://yourapp.vercel.app`
+5. Set authorized origins:
+   - `https://[PROJECT_ID].supabase.co` (your Supabase domain)
+6. Set authorized redirect URIs:
+   - `https://[PROJECT_ID].supabase.co/auth/v1/callback` (Supabase callback)
+7. Copy **Client ID** and **Client Secret**
+8. Go to **Supabase Dashboard** → **Authentication** → **Providers** → **Google**
+9. Paste Client ID and Client Secret
+10. Enable the provider
+11. Save
 
-| Variable | Value | Source |
-|----------|-------|--------|
-| `GOOGLE_CLIENT_ID` | `1234567890-abc...apps.googleusercontent.com` | OAuth Credentials |
-| `GOOGLE_CLIENT_SECRET` | `GOCSPX-xyz...` | OAuth Credentials |
-
-**⚠️ Important:** 
-- Keep `CLIENT_SECRET` private (backend only)
-- Update authorized domains when you get your Vercel URL!
+**⚠️ Important:**
+- You do NOT store Google credentials in Vercel
+- Supabase handles all OAuth flows
+- All traffic goes through Supabase
+- Keep `CLIENT_SECRET` only in Supabase
 
 ---
 
@@ -146,9 +151,10 @@ SUPABASE:
   Project ID:   ________________________
   DB Password:  ________________________
 
-GOOGLE OAUTH:
+GOOGLE OAUTH (configure in Supabase, not Vercel):
   Client ID:     ________________________
   Client Secret: ________________________
+  (These go into Supabase Dashboard → Authentication → Providers → Google)
 
 API KEYS:
   Cloudflare ID:    ________________________

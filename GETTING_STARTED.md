@@ -92,22 +92,28 @@ Your `.env` file currently has real secrets. **⚠️ DO NOT COMMIT IT!**
 
 # 3. Get credentials
 #    → Copy DATABASE_URL (use port 6543!)
-#    → Copy Google OAuth keys
+#    → Get Google Client ID from Google Cloud Console
 
-# 4. Update .env
-nano backend/.env          # Update DATABASE_URL, GOOGLE creds
+# 4. Configure Google OAuth in Supabase
+#    → Supabase Dashboard → Authentication → Providers → Google
+#    → Paste Client ID and Client Secret
+#    → Enable provider
+#    → Save
 
-# 5. Install + test
+# 5. Update .env
+nano backend/.env          # Update DATABASE_URL only
+
+# 6. Install + test
 cd backend
 pip install -r requirements.txt
 python -m uvicorn main:app --reload
 
-# 6. In another terminal
+# 7. In another terminal
 cd frontend
 npm install
 npm run dev
 
-# 7. Visit http://localhost:5173
+# 8. Visit http://localhost:5173
 #    Test: Sign up, Email verify, Login, Google auth
 ```
 
