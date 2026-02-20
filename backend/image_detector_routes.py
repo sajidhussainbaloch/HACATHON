@@ -92,36 +92,27 @@ async def check_image(file: UploadFile = File(...)):
         try:
             async with httpx.AsyncClient(timeout=10.0) as client:
                 response = await client.post(HF_ENDPOINT, headers=headers, content=image_bytes)
-            if response.status_code >= 400:
-                raise HTTPException(
-                    status_code=502,
-                    detail="Model inference failed. Please try again in a moment.",
-                )
-            payload = response.json()
-            if isinstance(payload, dict) and payload.get("error"):
-                raise HTTPException(status_code=502, detail="Model error. Please try again later.")
-            if not isinstance(payload, list) or not payload:
-                raise HTTPException(status_code=502, detail="Unexpected model response.")
-
-            top = max(payload, key=lambda item: item.get("score", 0))
-            label = _map_hf_label(str(top.get("label", "Real")))
-            confidence = int(round(float(top.get("score", 0.5)) * 100))
-            explanation = (
-                "Model detected visual cues consistent with synthetic generation."
-                if label == "AI-generated"
-                else "Model detected natural texture and lighting distributions typical of real images."
-            )
-            return {
-                "classification": label,
-                "confidence": confidence,
-                "explanation": explanation,
-            }
-        except HTTPException:
-            raise
+            if response.status_code < 400:
+                payload = response.json()
+                if isinstance(payload, list) and payload:
+                    top = max(payload, key=lambda item: item.get("score", 0))
+                    label = _map_hf_label(str(top.get("label", "Real")))
+                    confidence = int(round(float(top.get("score", 0.5)) * 100))
+                    explanation = (
+                        "Model detected visual cues consistent with synthetic generation."
+                        if label == "AI-generated"
+                        else "Model detected natural texture and lighting distributions typical of real images."
+                    )
+                    return {
+                        "classification": label,
+                        "confidence": confidence,
+                        "explanation": explanation,
+                    }
         except Exception:
-            raise HTTPException(status_code=502, detail="Model inference failed. Please try again later.")
+            # Fall back to heuristic below
+            pass
 
-    # Fallback heuristic when no HF API key
+    # Fallback heuristic when no HF API key or inference fails
     classification, confidence, explanation = _heuristic_detector(image_bytes)
     return {
         "classification": classification,
