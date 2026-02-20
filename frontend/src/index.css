@@ -73,3 +73,15 @@ body {
   border-color: #6366f1;
   background-color: rgba(99, 102, 241, 0.05);
 }
+
+/* Student Assistant dark-mode form readability */
+.student-assistant input,
+.student-assistant textarea,
+.student-assistant select {
+  color: var(--text-primary);
+  background-color: var(--bg-primary);
+}
+.student-assistant input::placeholder,
+.student-assistant textarea::placeholder {
+  color: var(--text-secondary);
+}

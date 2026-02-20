@@ -78,7 +78,7 @@ export default function StudentAssistant() {
   };
 
   return (
-    <main className="max-w-6xl mx-auto py-8 px-4 space-y-6 animate-fade-in-up">
+    <main className="student-assistant max-w-6xl mx-auto py-8 px-4 space-y-6 animate-fade-in-up">
       <div className="rounded-xl p-5" style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)' }}>
         <h1 className="text-2xl font-bold mb-2" style={{ color: 'var(--text-primary)' }}>
           AI Student Research Copilot
