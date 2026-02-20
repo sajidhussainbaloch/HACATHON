@@ -38,33 +38,29 @@ function AnalyzerPage() {
     } finally {
       setLoading(false);
     }
-          [
-            {
-              icon: '🔍',
-              title: 'Forensic Media Classifier',
-              desc: 'Transformer-based credibility scoring with calibrated confidence bands.'
-            },
-            {
-              icon: '🧠',
-              title: 'Advanced Study Analyzer',
-              desc: 'Contextual summaries, concept graphs, MCQ generation, and exam-ready insights.'
-            },
-            {
-              icon: '📷',
-              title: 'AI Image Authenticity Checker',
-              desc: 'Deepfake and synthetic-image detection with real-time confidence explanations.'
-            },
-            {
-              icon: '🪄',
-              title: 'AI Image Generator Studio',
-              desc: 'Prompt-to-image generation using FLUX.1 Schnell with rapid iteration.'
-            },
-            {
-              icon: '📚',
-              title: 'Evidence Retrieval Engine',
-              desc: 'RAG pipeline aligned to trusted sources with audit-ready citations.'
-            }
-          ].map((f) => (
+  }, []);
+
+  const handleReset = useCallback(() => {
+    setResult(null);
+    setError('');
+  }, []);
+
+  return (
+    <main className="max-w-6xl mx-auto py-10 px-4">
+      <Hero />
+      <InputArea onSubmit={handleSubmit} />
+      {loading && <Loader />}
+      {error && (
+        <div
+          className="mt-6 p-4 rounded-xl border border-red-400/30 bg-red-500/10 text-sm"
+          style={{ color: 'var(--text-primary)' }}
+        >
+          {error}
+        </div>
+      )}
+      {result && (
+        <>
+          <ResultPanel data={result} />
           <div className="flex justify-center mt-2 pb-8">
             <button
               onClick={handleReset}
