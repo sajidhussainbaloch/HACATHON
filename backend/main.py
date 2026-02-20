@@ -76,6 +76,36 @@ async def health():
     return {"status": "ok"}
 
 
+# ── Debug OCR endpoint (to diagnose credential issues) ────────────────────────
+@app.get("/debug/ocr")
+async def debug_ocr():
+    """
+    Returns diagnostic info about OCR setup.
+    """
+    import os
+    import json
+    from services.ocr import VISION_AVAILABLE
+    
+    creds_var = os.getenv("GOOGLE_APPLICATION_CREDENTIALS", "NOT SET")
+    creds_valid = False
+    creds_preview = ""
+    
+    if creds_var != "NOT SET" and creds_var:
+        try:
+            parsed = json.loads(creds_var)
+            creds_valid = True
+            creds_preview = f"Valid JSON, project_id: {parsed.get('project_id', 'N/A')}"
+        except json.JSONDecodeError as e:
+            creds_preview = f"Invalid JSON: {str(e)[:100]}"
+    
+    return {
+        "vision_available": VISION_AVAILABLE,
+        "credentials_set": creds_var != "NOT SET",
+        "credentials_valid_json": creds_valid,
+        "credentials_info": creds_preview,
+    }
+
+
 # ── Main analysis endpoint ───────────────────────────────────────────────────
 @app.post("/analyze", response_model=AnalysisResponse)
 async def analyze(
