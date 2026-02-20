@@ -31,12 +31,18 @@ export default function CursorDots() {
     canvasRef.current = canvas;
 
     const ctx = canvas.getContext('2d');
-    const particleCount = 40;
+    const particleCount = 100;
+    const gridSize = Math.ceil(Math.sqrt(particleCount));
 
-    // Initialize particles - spread across entire page
+    // Initialize particles - spread evenly across entire page in grid
     particles.current = Array.from({ length: particleCount }, (_, i) => {
-      const baseX = Math.random() * window.innerWidth;
-      const baseY = Math.random() * window.innerHeight;
+      const gridX = (i % gridSize) * (window.innerWidth / gridSize);
+      const gridY = Math.floor(i / gridSize) * (window.innerHeight / gridSize);
+      
+      // Add small random offset for natural look
+      const baseX = gridX + Math.random() * (window.innerWidth / gridSize) * 0.8;
+      const baseY = gridY + Math.random() * (window.innerHeight / gridSize) * 0.8;
+      
       return {
         id: i,
         x: baseX,
@@ -50,7 +56,7 @@ export default function CursorDots() {
         radius: 1.5 + Math.random() * 2.5,
         baseOpacity: 0.3 + Math.random() * 0.5,
         pulseOffset: Math.random() * Math.PI * 2,
-        repelDistance: 100 + Math.random() * 50,
+        repelDistance: 180 + Math.random() * 80,
       };
     });
 
