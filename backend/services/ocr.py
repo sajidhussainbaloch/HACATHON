@@ -56,40 +56,55 @@ async def extract_text_from_image(file: UploadFile) -> str | None:
             print(f"⚠️  Invalid image file: {e}")
             return None
 
-        # Create Vision API client
-        # Handle both file path and JSON credentials
+        # Create Vision API client with JSON credentials
+        print(f"ℹ️  Attempting to use GOOGLE_APPLICATION_CREDENTIALS (length: {len(creds_var)})")
+        
         try:
             if creds_var.strip().startswith('{'):
                 # JSON credentials passed as environment variable
-                print("ℹ️  Using JSON credentials from GOOGLE_APPLICATION_CREDENTIALS")
+                print("ℹ️  Parsing JSON credentials...")
                 creds_dict = json.loads(creds_var)
+                print(f"ℹ️  Credentials parsed. Project ID: {creds_dict.get('project_id')}")
+                
                 credentials = service_account.Credentials.from_service_account_info(creds_dict)
+                print("ℹ️  Service account credentials created successfully")
+                
                 client = vision.ImageAnnotatorClient(credentials=credentials)
+                print("ℹ️  Vision API client created with service account credentials")
             else:
                 # File path credentials (standard behavior)
-                print("ℹ️  Using file-based credentials from GOOGLE_APPLICATION_CREDENTIALS")
+                print("ℹ️  Using file-based credentials from path")
                 client = vision.ImageAnnotatorClient()
+                
         except json.JSONDecodeError as e:
-            print(f"⚠️  Failed to parse GOOGLE_APPLICATION_CREDENTIALS as JSON: {e}")
+            print(f"❌ Failed to parse JSON credentials: {e}")
+            return None
+        except Exception as e:
+            print(f"❌ Failed to create Vision client: {type(e).__name__}: {e}")
             return None
 
         # Call Google Cloud Vision API
+        print("ℹ️  Sending image to Google Cloud Vision API...")
         image_obj = vision.Image(content=contents)
         response = client.text_detection(image=image_obj)
+        print("ℹ️  Received response from Vision API")
 
         # Extract text from response
         if response.text_annotations:
             # First annotation contains all text
             full_text = response.text_annotations[0].description.strip()
             if full_text:
+                print(f"✅ OCR successful! Extracted {len(full_text)} characters")
                 return full_text
             else:
                 print("⚠️  No text detected in image")
                 return None
         else:
-            print("⚠️  No text detected in image")
+            print("⚠️  No text detected in image (empty response)")
             return None
 
     except Exception as exc:
-        print(f"⚠️  Google Cloud Vision API error: {str(exc)}")
+        print(f"❌ Unexpected error in OCR: {type(exc).__name__}: {str(exc)}")
+        import traceback
+        traceback.print_exc()
         return None  # Return None instead of raising
