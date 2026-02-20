@@ -3,7 +3,8 @@ uvicorn[standard]
 httpx
 python-dotenv
 python-multipart
-google-cloud-vision
+google-cloud-vision==3.4.1
+google-auth==2.25.2
 Pillow
 faiss-cpu
 numpy
