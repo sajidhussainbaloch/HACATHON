@@ -1,10 +1,13 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { GoogleLogin } from '@react-oauth/google';
 import OTPInput from '../components/OTPInput';
-import { apiSignup, apiVerifyOTP } from '../services/api';
+import { apiSignup, apiVerifyOTP, apiGoogleAuth } from '../services/api';
+import { useAuth } from '../context/AuthContext';
 
 export default function Signup() {
   const navigate = useNavigate();
+  const { login } = useAuth();
   const [step, setStep] = useState('form'); // 'form' | 'otp'
   const [form, setForm] = useState({ full_name: '', email: '', password: '', confirm: '' });
   const [error, setError] = useState('');
@@ -43,6 +46,20 @@ export default function Signup() {
       await apiVerifyOTP({ email: form.email, otp });
       setSuccess('Email verified! Redirecting to login...');
       setTimeout(() => navigate('/login'), 1500);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGoogleSuccess = async (credentialResponse) => {
+    setError('');
+    setLoading(true);
+    try {
+      const data = await apiGoogleAuth({ idToken: credentialResponse.credential });
+      login(data.access_token);
+      navigate('/app');
     } catch (err) {
       setError(err.message);
     } finally {
@@ -149,6 +166,26 @@ export default function Signup() {
               {loading ? 'Creating Account...' : 'Sign Up'}
             </button>
           </form>
+
+          <div className="relative my-6">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t" style={{ borderColor: 'var(--border-color)' }}></div>
+            </div>
+            <div className="relative flex justify-center text-sm">
+              <span className="px-2" style={{ backgroundColor: 'var(--bg-card)', color: 'var(--text-secondary)' }}>
+                Or continue with
+              </span>
+            </div>
+          </div>
+
+          <div className="flex justify-center">
+            <GoogleLogin
+              onSuccess={handleGoogleSuccess}
+              onError={() => setError('Google signup failed')}
+              theme="filled_blue"
+              size="large"
+            />
+          </div>
         ) : (
           <div className="space-y-6">
             <OTPInput onComplete={handleVerify} />

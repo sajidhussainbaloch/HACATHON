@@ -117,3 +117,16 @@ export async function apiUpdateProfile({ full_name }) {
   return parseResponse(resp, 'Update failed');
 }
 
+/**
+ * Authenticate with Google OAuth.
+ * idToken is the JWT from Google Sign-In.
+ */
+export async function apiGoogleAuth({ idToken }) {
+  const resp = await fetch(`${API_BASE}/auth/google`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ id_token: idToken }),
+  });
+  return parseResponse(resp, 'Google login failed');
+}
+

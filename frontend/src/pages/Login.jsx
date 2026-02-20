@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { apiLogin } from '../services/api';
+import { GoogleLogin } from '@react-oauth/google';
+import { apiLogin, apiGoogleAuth } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 
 export default function Login() {
@@ -16,6 +17,20 @@ export default function Login() {
     setLoading(true);
     try {
       const data = await apiLogin({ email: form.email, password: form.password });
+      login(data.access_token);
+      navigate('/app');
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGoogleSuccess = async (credentialResponse) => {
+    setError('');
+    setLoading(true);
+    try {
+      const data = await apiGoogleAuth({ idToken: credentialResponse.credential });
       login(data.access_token);
       navigate('/app');
     } catch (err) {
@@ -93,6 +108,26 @@ export default function Login() {
             {loading ? 'Logging in...' : 'Log In'}
           </button>
         </form>
+
+        <div className="relative my-6">
+          <div className="absolute inset-0 flex items-center">
+            <div className="w-full border-t" style={{ borderColor: 'var(--border-color)' }}></div>
+          </div>
+          <div className="relative flex justify-center text-sm">
+            <span className="px-2" style={{ backgroundColor: 'var(--bg-card)', color: 'var(--text-secondary)' }}>
+              Or continue with
+            </span>
+          </div>
+        </div>
+
+        <div className="flex justify-center">
+          <GoogleLogin
+            onSuccess={handleGoogleSuccess}
+            onError={() => setError('Google login failed')}
+            theme="filled_blue"
+            size="large"
+          />
+        </div>
 
         <p className="text-center text-sm mt-6" style={{ color: 'var(--text-secondary)' }}>
           Don't have an account?{' '}

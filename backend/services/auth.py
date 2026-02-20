@@ -1,6 +1,6 @@
 """
 RealityCheck AI — Authentication Service
-User signup, login, OTP verification, password reset.
+User signup, login, OTP verification, password reset, Google OAuth.
 """
 
 from datetime import datetime, timedelta
@@ -20,6 +20,11 @@ from utils.security import (
     generate_reset_token,
 )
 from utils.email_sender import send_otp_email, send_password_reset_email
+from utils.config import GOOGLE_CLIENT_ID
+
+# Google OAuth token verification
+from google.oauth2 import id_token
+from google.auth.transport import requests as google_requests
 
 security = HTTPBearer()
 
@@ -51,6 +56,10 @@ class ResetPasswordRequest(BaseModel):
 
 class UpdateProfileRequest(BaseModel):
     full_name: Optional[str] = None
+
+
+class GoogleAuthRequest(BaseModel):
+    id_token: str
 
 
 # ── Response Models ───────────────────────────────────────────────────────────
@@ -292,3 +301,65 @@ async def update_user_profile(req, user, db):
         email=user.email,
         is_verified=user.is_verified,
     )
+
+
+async def google_auth(req: GoogleAuthRequest, db: Session):
+    """Authenticate with Google OAuth. Creates account if first time."""
+    if not GOOGLE_CLIENT_ID:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Google OAuth is not configured on the server.",
+        )
+
+    # Verify the Google ID token
+    try:
+        idinfo = id_token.verify_oauth2_token(
+            req.id_token,
+            google_requests.Request(),
+            GOOGLE_CLIENT_ID,
+        )
+    except ValueError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid Google token.",
+        )
+
+    email = idinfo.get("email")
+    name = idinfo.get("name", "")
+    email_verified = idinfo.get("email_verified", False)
+
+    if not email:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Google account has no email address.",
+        )
+
+    # Check if user exists
+    user = db.query(User).filter(User.email == email).first()
+
+    if not user:
+        # Create new user (auto-verified since Google verified the email)
+        user = User(
+            full_name=name,
+            email=email,
+            hashed_password=None,
+            auth_provider="google",
+            is_verified=True,
+        )
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+    elif user.auth_provider == "email" and not user.is_verified:
+        # User signed up with email but never verified — link Google account
+        user.auth_provider = "google"
+        user.is_verified = True
+        if not user.full_name:
+            user.full_name = name
+        db.commit()
+        db.refresh(user)
+
+    # Create access token
+    token_data = {"sub": user.email, "id": user.id}
+    access_token = create_access_token(token_data)
+
+    return TokenResponse(access_token=access_token)
