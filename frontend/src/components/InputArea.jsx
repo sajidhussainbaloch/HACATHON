@@ -161,7 +161,7 @@ export default function InputArea({ onSubmit, loading }) {
 
       {/* Info text */}
       <p className="text-center text-xs mt-4" style={{ color: 'var(--text-secondary)' }}>
-        ✓ Your data is encrypted • Analysis takes <2 seconds • 10K+ trusted sources
+        ✓ Your data is encrypted • Analysis takes &lt;2 seconds • 10K+ trusted sources
       </p>
     </div>
   );

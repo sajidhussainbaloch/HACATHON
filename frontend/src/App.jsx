@@ -6,7 +6,7 @@ import InputArea from './components/InputArea';
 import Loader from './components/Loader';
 import ResultPanel from './components/ResultPanel';
 import ProtectedRoute from './components/ProtectedRoute';
-import CursorDots from './components/CursorDots';
+import BackgroundAnimation from './components/BackgroundAnimation';
 import { analyzeContent } from './services/api';
 
 // Pages
@@ -139,8 +139,8 @@ export default function App() {
 
   return (
     <div className={darkMode ? 'dark' : ''}>
-      <CursorDots />
-      <div className="min-h-screen transition-colors" style={{ backgroundColor: 'var(--bg-primary)' }}>
+      <BackgroundAnimation />
+      <div className="min-h-screen transition-colors relative z-10" style={{ backgroundColor: 'var(--bg-primary)' }}>
         <Navbar darkMode={darkMode} toggleDarkMode={toggleDarkMode} />
 
         <Routes>
