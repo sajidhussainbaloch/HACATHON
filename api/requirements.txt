@@ -1,0 +1,16 @@
+fastapi
+uvicorn[standard]
+httpx
+python-dotenv
+python-multipart
+google-cloud-vision==3.4.1
+google-auth==2.25.2
+Pillow
+faiss-cpu
+numpy
+sqlalchemy
+psycopg2-binary
+bcrypt
+python-jose[cryptography]
+pydantic[email]
+requests
