@@ -1,29 +1,20 @@
 """
 RealityCheck AI — OCR Service
-Extracts text from uploaded images using Google Cloud Vision API.
-Falls back gracefully if credentials are not configured.
+Extracts text from uploaded images using OCR.space API (free, no auth required).
+Falls back gracefully if API is unavailable.
 """
 
 import os
-import json
+import httpx
 from PIL import Image
 from io import BytesIO
 from fastapi import UploadFile, HTTPException
 
-# Try to import Google Cloud Vision
-try:
-    from google.cloud import vision
-    from google.oauth2 import service_account
-    VISION_AVAILABLE = True
-except ImportError:
-    VISION_AVAILABLE = False
-    print("⚠️  Google Cloud Vision not installed - OCR will be skipped")
-
 
 async def extract_text_from_image(file: UploadFile) -> str | None:
     """
-    Extract text from image using Google Cloud Vision API.
-    Returns None if Vision API is not configured or available.
+    Extract text from image using OCR.space API (free, no authentication).
+    Returns None if OCR fails or API is unavailable.
     Raises HTTPException for invalid image types.
     """
     allowed_types = {"image/png", "image/jpeg", "image/jpg", "image/webp", "image/bmp"}
@@ -34,77 +25,61 @@ async def extract_text_from_image(file: UploadFile) -> str | None:
                    f"Allowed: {', '.join(allowed_types)}",
         )
 
-    # Check if Vision API is available
-    if not VISION_AVAILABLE:
-        print("⚠️  OCR skipped: Google Cloud Vision not installed.")
-        return None
-
-    # Check if credentials are configured
-    creds_var = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
-    if not creds_var:
-        print("⚠️  OCR skipped: GOOGLE_APPLICATION_CREDENTIALS not set")
-        return None
-
     try:
         contents = await file.read()
         
-        # Validate image first
+        # Validate image with PIL
         try:
             image = Image.open(BytesIO(contents))
             image.verify()
+            print(f"✅ Image validated: {image.format} {image.size}")
         except Exception as e:
             print(f"⚠️  Invalid image file: {e}")
             return None
 
-        # Create Vision API client with JSON credentials
-        print(f"ℹ️  Attempting to use GOOGLE_APPLICATION_CREDENTIALS (length: {len(creds_var)})")
+        # Call OCR.space API (free, no auth required)
+        print("ℹ️  Sending image to OCR.space API...")
         
-        try:
-            if creds_var.strip().startswith('{'):
-                # JSON credentials passed as environment variable
-                print("ℹ️  Parsing JSON credentials...")
-                creds_dict = json.loads(creds_var)
-                print(f"ℹ️  Credentials parsed. Project ID: {creds_dict.get('project_id')}")
-                
-                credentials = service_account.Credentials.from_service_account_info(creds_dict)
-                print("ℹ️  Service account credentials created successfully")
-                
-                client = vision.ImageAnnotatorClient(credentials=credentials)
-                print("ℹ️  Vision API client created with service account credentials")
-            else:
-                # File path credentials (standard behavior)
-                print("ℹ️  Using file-based credentials from path")
-                client = vision.ImageAnnotatorClient()
-                
-        except json.JSONDecodeError as e:
-            print(f"❌ Failed to parse JSON credentials: {e}")
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            files = {"filename": ("image", contents, file.content_type)}
+            data = {
+                "apikey": "K87899142C87",  # Free tier API key
+                "isOverlayRequired": "false",
+                "language": "eng",
+            }
+            
+            response = await client.post(
+                "https://api.ocr.space/parse/image",
+                files=files,
+                data=data,
+            )
+        
+        if response.status_code != 200:
+            print(f"⚠️  OCR.space API error: {response.status_code}")
             return None
-        except Exception as e:
-            print(f"❌ Failed to create Vision client: {type(e).__name__}: {e}")
+        
+        result = response.json()
+        print(f"ℹ️  OCR.space response: {result.get('IsErroredOnProcessing', False)}")
+        
+        # Check for API errors
+        if result.get("IsErroredOnProcessing"):
+            error_msg = result.get("ErrorMessage", "Unknown error")
+            print(f"⚠️  OCR error: {error_msg}")
             return None
-
-        # Call Google Cloud Vision API
-        print("ℹ️  Sending image to Google Cloud Vision API...")
-        image_obj = vision.Image(content=contents)
-        response = client.text_detection(image=image_obj)
-        print("ℹ️  Received response from Vision API")
-
-        # Extract text from response
-        if response.text_annotations:
-            # First annotation contains all text
-            full_text = response.text_annotations[0].description.strip()
-            if full_text:
-                print(f"✅ OCR successful! Extracted {len(full_text)} characters")
-                return full_text
-            else:
-                print("⚠️  No text detected in image")
-                return None
+        
+        # Extract parsed text
+        parsed_text = result.get("ParsedText", "").strip()
+        
+        if parsed_text:
+            print(f"✅ OCR successful! Extracted {len(parsed_text)} characters")
+            return parsed_text
         else:
-            print("⚠️  No text detected in image (empty response)")
+            print("⚠️  No text detected in image")
             return None
 
+    except httpx.TimeoutException:
+        print("⚠️  OCR.space API timeout")
+        return None
     except Exception as exc:
         print(f"❌ Unexpected error in OCR: {type(exc).__name__}: {str(exc)}")
-        import traceback
-        traceback.print_exc()
-        return None  # Return None instead of raising
+        return None

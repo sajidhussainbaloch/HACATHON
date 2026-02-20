@@ -82,27 +82,10 @@ async def debug_ocr():
     """
     Returns diagnostic info about OCR setup.
     """
-    import os
-    import json
-    from services.ocr import VISION_AVAILABLE
-    
-    creds_var = os.getenv("GOOGLE_APPLICATION_CREDENTIALS", "NOT SET")
-    creds_valid = False
-    creds_preview = ""
-    
-    if creds_var != "NOT SET" and creds_var:
-        try:
-            parsed = json.loads(creds_var)
-            creds_valid = True
-            creds_preview = f"Valid JSON, project_id: {parsed.get('project_id', 'N/A')}"
-        except json.JSONDecodeError as e:
-            creds_preview = f"Invalid JSON: {str(e)[:100]}"
-    
     return {
-        "vision_available": VISION_AVAILABLE,
-        "credentials_set": creds_var != "NOT SET",
-        "credentials_valid_json": creds_valid,
-        "credentials_info": creds_preview,
+        "ocr_method": "OCR.space API (free, no auth required)",
+        "api_status": "Available",
+        "note": "Using free tier OCR.space - no billing or authentication needed",
     }
 
 
