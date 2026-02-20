@@ -26,6 +26,8 @@ HF_FALLBACK_MODELS = [
     "stabilityai/stable-diffusion-2-1",
     "nitrosocke/anything-midjourney-v6",
 ]
+STABILITY_API_KEY = os.getenv("STABILITY_API_KEY")
+STABILITY_ENGINE_ID = os.getenv("STABILITY_ENGINE_ID", "stable-diffusion-xl-1024-v1-0")
 
 
 class GenerateRequest(BaseModel):
@@ -63,6 +65,27 @@ async def generate_image(payload: GenerateRequest):
             if r is None or (r.status_code in {404, 410}):
                 return await client.post(direct_endpoint, headers=headers, json=request_body)
             return r
+
+    async def request_stability(engine_id: str):
+        endpoint = f"https://api.stability.ai/v1/generation/{engine_id}/text-to-image"
+        stability_headers = {
+            "Authorization": f"Bearer {STABILITY_API_KEY}",
+            "Accept": "application/json",
+            "Content-Type": "application/json",
+        }
+        prompts = [{"text": prompt, "weight": 1}]
+        if negative_prompt:
+            prompts.append({"text": negative_prompt, "weight": -1})
+        payload = {
+            "text_prompts": prompts,
+            "cfg_scale": 7,
+            "steps": 30,
+            "samples": 1,
+            "height": 1024,
+            "width": 1024,
+        }
+        async with httpx.AsyncClient(timeout=60.0) as client:
+            return await client.post(endpoint, headers=stability_headers, json=payload)
 
     try:
         attempts = []
@@ -104,12 +127,34 @@ async def generate_image(payload: GenerateRequest):
                 "model": candidate,
             }
 
+        # If HF candidates all failed, try Stability AI if configured
         attempted = ", ".join([f"{m}({s})" for m, s in attempts]) if attempts else "none"
+        if STABILITY_API_KEY:
+            try:
+                stability_resp = await request_stability(STABILITY_ENGINE_ID)
+                if stability_resp.status_code < 400:
+                    data = stability_resp.json()
+                    artifacts = data.get("artifacts", []) if isinstance(data, dict) else []
+                    if artifacts and artifacts[0].get("base64"):
+                        encoded = artifacts[0]["base64"]
+                        return {
+                            "image_base64": encoded,
+                            "content_type": "image/png",
+                            "width": 1024,
+                            "height": 1024,
+                            "model": f"stability:{STABILITY_ENGINE_ID}",
+                        }
+                    raise HTTPException(status_code=502, detail="Stability AI returned an empty image.")
+                else:
+                    attempted = attempted + f", stability({stability_resp.status_code})"
+            except Exception:
+                attempted = attempted + ", stability(error)"
+
         raise HTTPException(
             status_code=502,
             detail=(
                 "Image generation failed for all free Hugging Face candidates. "
-                f"Attempts: {attempted}. Consider adding a provider key (StabilityAI) or using a paid HF model."
+                f"Attempts: {attempted}. If you can, set `STABILITY_API_KEY` for a more reliable provider."
             ),
         )
     except HTTPException:
