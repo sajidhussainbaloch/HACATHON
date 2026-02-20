@@ -1,61 +1,73 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { supabase } from '../services/supabase';
 
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
-  const [token, setToken] = useState(() => localStorage.getItem('rc_token'));
+  const [session, setSession] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Fetch user profile on mount if token exists
   useEffect(() => {
-    if (token) {
-      fetchProfile(token);
-    } else {
+    // Get initial session
+    supabase.auth.getSession().then(({ data: { session: s } }) => {
+      setSession(s);
+      setUser(s?.user ?? null);
       setLoading(false);
-    }
-  }, []);
+    });
 
-  const fetchProfile = async (jwt) => {
-    try {
-      const resp = await fetch('/auth/profile', {
-        headers: { Authorization: `Bearer ${jwt}` },
-      });
-      if (resp.ok) {
-        const text = await resp.text();
-        const data = JSON.parse(text);
-        setUser(data);
-      } else {
-        // Token invalid/expired — clear it
-        localStorage.removeItem('rc_token');
-        setToken(null);
-        setUser(null);
+    // Listen for auth changes (login, logout, token refresh, OAuth redirect)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (_event, s) => {
+        setSession(s);
+        setUser(s?.user ?? null);
+        setLoading(false);
       }
-    } catch {
-      localStorage.removeItem('rc_token');
-      setToken(null);
-      setUser(null);
-    } finally {
-      setLoading(false);
-    }
-  };
+    );
 
-  const login = useCallback((jwt) => {
-    localStorage.setItem('rc_token', jwt);
-    setToken(jwt);
-    fetchProfile(jwt);
+    return () => subscription.unsubscribe();
   }, []);
 
-  const logout = useCallback(() => {
-    localStorage.removeItem('rc_token');
-    setToken(null);
+  const login = useCallback((s) => {
+    // Called after manual signIn — session is set via onAuthStateChange too
+    if (s?.user) {
+      setSession(s);
+      setUser(s.user);
+    }
+  }, []);
+
+  const logout = useCallback(async () => {
+    await supabase.auth.signOut();
+    setSession(null);
     setUser(null);
   }, []);
 
-  const isAuthenticated = !!user && !!token;
+  const isAuthenticated = !!user && !!session;
+
+  // Expose a friendly user shape for existing components
+  const userProfile = user
+    ? {
+        id: user.id,
+        email: user.email,
+        full_name: user.user_metadata?.full_name || user.email?.split('@')[0] || '',
+        is_verified: !!user.email_confirmed_at,
+        avatar_url: user.user_metadata?.avatar_url || null,
+        provider: user.app_metadata?.provider || 'email',
+      }
+    : null;
 
   return (
-    <AuthContext.Provider value={{ user, token, loading, isAuthenticated, login, logout }}>
+    <AuthContext.Provider
+      value={{
+        user: userProfile,
+        session,
+        token: session?.access_token || null,
+        loading,
+        isAuthenticated,
+        login,
+        logout,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

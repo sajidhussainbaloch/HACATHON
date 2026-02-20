@@ -1,11 +1,9 @@
 import React, { useState } from 'react';
-import { Link, useSearchParams, useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { apiResetPassword } from '../services/api';
 
 export default function ResetPassword() {
-  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const token = searchParams.get('token') || '';
 
   const [form, setForm] = useState({ password: '', confirm: '' });
   const [error, setError] = useState('');
@@ -15,11 +13,6 @@ export default function ResetPassword() {
   const handleReset = async (e) => {
     e.preventDefault();
     setError('');
-
-    if (!token) {
-      setError('Invalid reset link. No token provided.');
-      return;
-    }
 
     if (form.password.length < 6) {
       setError('Password must be at least 6 characters.');
@@ -33,7 +26,7 @@ export default function ResetPassword() {
 
     setLoading(true);
     try {
-      await apiResetPassword({ token, new_password: form.password });
+      await apiResetPassword({ new_password: form.password });
       setSuccess('Password reset successfully! Redirecting to login...');
       setTimeout(() => navigate('/login'), 2000);
     } catch (err) {

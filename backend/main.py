@@ -1,15 +1,17 @@
 """
 RealityCheck AI — FastAPI Application
 Main entry-point: /analyze endpoint, CORS, startup tasks.
+
+Auth is handled by Supabase Auth SDK on the frontend.
+The backend only serves the /analyze and /health endpoints.
 """
 
 from contextlib import asynccontextmanager
 from typing import Optional
 
-from fastapi import FastAPI, UploadFile, File, Form, HTTPException, Depends
+from fastapi import FastAPI, UploadFile, File, Form, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from sqlalchemy.orm import Session
 
 from services.ocr import extract_text_from_image
 from services.classifier import classify_news
@@ -17,24 +19,7 @@ from services.rag import build_index, retrieve_similar
 from services.explanation import generate_explanation
 from utils.config import MAX_INPUT_CHARS
 
-# Authentication imports
-from database import init_db, get_db
-from services.auth import (
-    signup_user,
-    verify_otp,
-    login_user,
-    forgot_password,
-    reset_password,
-    get_user_profile,
-    update_user_profile,
-    get_current_user,
-    SignupRequest,
-    VerifyOTPRequest,
-    LoginRequest,
-    ForgotPasswordRequest,
-    ResetPasswordRequest,
-    UpdateProfileRequest,
-)
+from database import init_db
 
 
 # ── Pydantic response model ──────────────────────────────────────────────────
@@ -83,49 +68,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-
-# ── Authentication endpoints ──────────────────────────────────────────────────
-@app.post("/auth/signup")
-async def signup(req: SignupRequest, db: Session = Depends(get_db)):
-    """Register a new user and send OTP verification email."""
-    return await signup_user(req, db)
-
-
-@app.post("/auth/verify-otp")
-async def verify(req: VerifyOTPRequest, db: Session = Depends(get_db)):
-    """Verify OTP and activate user account."""
-    return await verify_otp(req, db)
-
-
-@app.post("/auth/login")
-async def login(req: LoginRequest, db: Session = Depends(get_db)):
-    """Login and receive JWT access token."""
-    return await login_user(req, db)
-
-
-@app.post("/auth/forgot-password")
-async def forgot(req: ForgotPasswordRequest, db: Session = Depends(get_db)):
-    """Request password reset email."""
-    return await forgot_password(req, db)
-
-
-@app.post("/auth/reset-password")
-async def reset(req: ResetPasswordRequest, db: Session = Depends(get_db)):
-    """Reset password using token from email."""
-    return await reset_password(req, db)
-
-
-@app.get("/auth/profile")
-async def profile(user = Depends(get_current_user)):
-    """Get current user profile (protected route)."""
-    return await get_user_profile(user)
-
-
-@app.put("/auth/profile")
-async def update_profile(req: UpdateProfileRequest, user = Depends(get_current_user), db: Session = Depends(get_db)):
-    """Update current user profile (protected route)."""
-    return await update_user_profile(req, user, db)
 
 
 # ── Health check ──────────────────────────────────────────────────────────────

@@ -1,13 +1,24 @@
 /**
  * RealityCheck AI — API service
- * Communicates with the FastAPI backend.
+ * Communicates with the FastAPI backend for analysis.
+ * Auth is handled directly by Supabase (see supabase.js + AuthContext).
  */
+import { supabase } from './supabase';
 
 const API_BASE = import.meta.env.VITE_API_URL || '';
 
 function getAuthHeaders() {
-  const token = localStorage.getItem('rc_token');
-  return token ? { Authorization: `Bearer ${token}` } : {};
+  // We'll get the token from supabase session synchronously if available
+  const key = `sb-${import.meta.env.VITE_SUPABASE_URL?.split('//')[1]?.split('.')[0]}-auth-token`;
+  try {
+    const raw = localStorage.getItem(key);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      const token = parsed?.access_token || parsed?.currentSession?.access_token;
+      if (token) return { Authorization: `Bearer ${token}` };
+    }
+  } catch { /* ignore */ }
+  return {};
 }
 
 /** Safely parse JSON response, extracting a readable error message. */
@@ -37,7 +48,6 @@ async function parseResponse(resp, fallbackMsg) {
 
 /**
  * Send text or image to /analyze and return structured results.
- * Requires authentication (JWT token).
  */
 export async function analyzeContent({ text, file }) {
   const formData = new FormData();
@@ -61,72 +71,66 @@ export async function healthCheck() {
   return resp.json();
 }
 
-// ── Authentication API ──────────────────────────────────────────────────────
+// ── Supabase Auth helpers (used by pages) ────────────────────────────────────
 
 export async function apiSignup({ full_name, email, password }) {
-  const resp = await fetch(`${API_BASE}/auth/signup`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ full_name, email, password }),
+  const { data, error } = await supabase.auth.signUp({
+    email,
+    password,
+    options: {
+      data: { full_name },
+    },
   });
-  return parseResponse(resp, 'Signup failed');
-}
-
-export async function apiVerifyOTP({ email, otp }) {
-  const resp = await fetch(`${API_BASE}/auth/verify-otp`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email, otp }),
-  });
-  return parseResponse(resp, 'OTP verification failed');
+  if (error) throw new Error(error.message);
+  return data;
 }
 
 export async function apiLogin({ email, password }) {
-  const resp = await fetch(`${API_BASE}/auth/login`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email, password }),
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email,
+    password,
   });
-  return parseResponse(resp, 'Login failed');
+  if (error) throw new Error(error.message);
+  return data;
+}
+
+export async function apiGoogleAuth() {
+  const { data, error } = await supabase.auth.signInWithOAuth({
+    provider: 'google',
+    options: {
+      redirectTo: window.location.origin,
+    },
+  });
+  if (error) throw new Error(error.message);
+  return data;
 }
 
 export async function apiForgotPassword({ email }) {
-  const resp = await fetch(`${API_BASE}/auth/forgot-password`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email }),
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: `${window.location.origin}/reset-password`,
   });
-  return parseResponse(resp, 'Request failed');
+  if (error) throw new Error(error.message);
+  return { message: 'Reset email sent.' };
 }
 
-export async function apiResetPassword({ token, new_password }) {
-  const resp = await fetch(`${API_BASE}/auth/reset-password`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ token, new_password }),
+export async function apiResetPassword({ new_password }) {
+  const { error } = await supabase.auth.updateUser({
+    password: new_password,
   });
-  return parseResponse(resp, 'Password reset failed');
+  if (error) throw new Error(error.message);
+  return { message: 'Password updated.' };
 }
 
 export async function apiUpdateProfile({ full_name }) {
-  const resp = await fetch(`${API_BASE}/auth/profile`, {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
-    body: JSON.stringify({ full_name }),
+  const { data, error } = await supabase.auth.updateUser({
+    data: { full_name },
   });
-  return parseResponse(resp, 'Update failed');
+  if (error) throw new Error(error.message);
+  return data;
 }
 
-/**
- * Authenticate with Google OAuth.
- * idToken is the JWT from Google Sign-In.
- */
-export async function apiGoogleAuth({ idToken }) {
-  const resp = await fetch(`${API_BASE}/auth/google`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ id_token: idToken }),
-  });
-  return parseResponse(resp, 'Google login failed');
+// OTP verification is NOT needed — Supabase handles email verification automatically.
+export async function apiVerifyOTP() {
+  return { message: 'Supabase verifies emails via link automatically.' };
 }
 
