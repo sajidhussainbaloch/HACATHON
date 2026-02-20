@@ -5,6 +5,7 @@ Provides a lightweight endpoint to generate images from text prompts.
 
 from __future__ import annotations
 
+import asyncio
 import base64
 import io
 import os
@@ -47,8 +48,7 @@ class GenerateRequest(BaseModel):
 async def generate_image(payload: GenerateRequest):
     prompt = (payload.prompt or "").strip()
     negative_prompt = (payload.negative_prompt or "").strip()
-    # Use DeAPI as the single image provider for generation. This keeps other
-    # application tabs untouched and confines changes to image generation only.
+    
     if not DEAPI_KEY or not DEAPI_BASE_URL:
         raise HTTPException(status_code=503, detail="DEAPI_KEY or DEAPI_BASE_URL is not configured.")
 
@@ -58,88 +58,82 @@ async def generate_image(payload: GenerateRequest):
         "Content-Type": "application/json",
     }
 
-    async def request_deapi(model_name: str):
-        # DeAPI requires: prompt, model, width, height, seed, steps
-        body: dict = {
-            "model": model_name,
-            "prompt": prompt,
-            "width": int(payload.width) if payload.width else 768,
-            "height": int(payload.height) if payload.height else 768,
-            "seed": int(payload.seed) if payload.seed is not None else random.randint(0, 2147483647),
-            "steps": int(payload.steps) if payload.steps else 4,
-        }
-        if negative_prompt:
-            body["negative_prompt"] = negative_prompt
-
-        async with httpx.AsyncClient(timeout=120.0) as client:
-            # The working client endpoint for your account is /client/txt2img
-            url = f"{DEAPI_BASE_URL.rstrip('/')}/client/txt2img"
-            return await client.post(url, headers=deapi_headers, json=body)
+    model_requested = (payload.model or "Flux1schnell").strip()
+    
+    # Step 1: Submit generation request to DeAPI
+    body = {
+        "model": model_requested,
+        "prompt": prompt,
+        "width": int(payload.width) if payload.width else 768,
+        "height": int(payload.height) if payload.height else 768,
+        "seed": int(payload.seed) if payload.seed is not None else random.randint(0, 2147483647),
+        "steps": int(payload.steps) if payload.steps else 4,
+    }
+    if negative_prompt:
+        body["negative_prompt"] = negative_prompt
 
     try:
-        model_requested = getattr(payload, "model", None) if hasattr(payload, "model") else None
-        model_requested = (model_requested or "Flux1schnell").strip()
-
-        resp = await request_deapi(model_requested)
-        if resp.status_code >= 400:
-            if resp.status_code == 401:
-                raise HTTPException(status_code=502, detail="DeAPI authentication failed. Check DEAPI_KEY.")
-            if resp.status_code == 429:
-                raise HTTPException(status_code=502, detail="DeAPI rate limited. Try again later.")
-            raise HTTPException(status_code=502, detail=f"DeAPI request failed ({resp.status_code}).")
-
-        ct = resp.headers.get("content-type", "")
-        if ct.startswith("image/"):
-            image_bytes = resp.content
-            encoded = base64.b64encode(image_bytes).decode("ascii")
-            # attempt to determine image dimensions
-            try:
-                img = Image.open(io.BytesIO(image_bytes))
-                w, h = img.size
-            except Exception:
-                w = payload.width or None
-                h = payload.height or None
-            return {"image_base64": encoded, "content_type": ct, "model": model_requested, "width": w, "height": h}
-
-        data = resp.json()
-        encoded = None
-        if isinstance(data, dict):
-            # Check for direct base64 fields
-            if data.get("image_base64"):
-                encoded = data.get("image_base64")
-            elif data.get("base64"):
-                encoded = data.get("base64")
-            elif data.get("b64"):
-                encoded = data.get("b64")
-            elif data.get("result") and isinstance(data.get("result"), str):
-                encoded = data.get("result")
-            elif data.get("artifacts") and isinstance(data.get("artifacts"), list):
-                first = data.get("artifacts")[0]
-                if isinstance(first, dict) and first.get("base64"):
-                    encoded = first.get("base64")
-            # Check for data.image or data.output fields
-            elif data.get("data") and isinstance(data.get("data"), dict):
-                inner = data.get("data")
-                if inner.get("image"):
-                    encoded = inner.get("image")
-                elif inner.get("output"):
-                    encoded = inner.get("output")
-                elif inner.get("base64"):
-                    encoded = inner.get("base64")
-            # Check for output field at root
-            elif data.get("output"):
-                encoded = data.get("output")
-            elif data.get("image"):
-                encoded = data.get("image")
-
-        if not encoded:
-            # Include first 500 chars of response for debugging
-            import json
-            resp_preview = json.dumps(data)[:500]
-            raise HTTPException(status_code=502, detail=f"DeAPI returned unexpected response: {resp_preview}")
-
-        return {"image_base64": encoded, "content_type": "image/png", "model": model_requested, "width": payload.width, "height": payload.height}
+        async with httpx.AsyncClient(timeout=180.0) as client:
+            # Submit request
+            url = f"{DEAPI_BASE_URL.rstrip('/')}/client/txt2img"
+            submit_resp = await client.post(url, headers=deapi_headers, json=body)
+            
+            if submit_resp.status_code >= 400:
+                if submit_resp.status_code == 401:
+                    raise HTTPException(status_code=502, detail="DeAPI authentication failed.")
+                raise HTTPException(status_code=502, detail=f"DeAPI request failed ({submit_resp.status_code}).")
+            
+            submit_data = submit_resp.json()
+            request_id = submit_data.get("data", {}).get("request_id")
+            
+            if not request_id:
+                raise HTTPException(status_code=502, detail="DeAPI did not return request_id")
+            
+            # Step 2: Poll for result
+            result_url = f"{DEAPI_BASE_URL.rstrip('/')}/client/txt2img/{request_id}"
+            max_attempts = 60  # 60 attempts * 2 seconds = 2 minutes max
+            
+            for attempt in range(max_attempts):
+                await asyncio.sleep(2)  # Wait 2 seconds between polls
+                
+                result_resp = await client.get(result_url, headers=deapi_headers)
+                
+                if result_resp.status_code == 200:
+                    result_data = result_resp.json()
+                    
+                    # Extract image from response
+                    encoded = None
+                    if isinstance(result_data, dict):
+                        # Try various field names
+                        data_obj = result_data.get("data", {})
+                        if isinstance(data_obj, dict):
+                            encoded = (data_obj.get("image") or data_obj.get("output") or 
+                                      data_obj.get("base64") or data_obj.get("image_base64"))
+                        
+                        if not encoded:
+                            encoded = (result_data.get("image") or result_data.get("output") or 
+                                      result_data.get("base64") or result_data.get("image_base64"))
+                    
+                    if encoded:
+                        return {
+                            "image_base64": encoded,
+                            "content_type": "image/png",
+                            "model": model_requested,
+                            "width": payload.width or 768,
+                            "height": payload.height or 768
+                        }
+                
+                elif result_resp.status_code == 404:
+                    # Still processing, continue polling
+                    continue
+                else:
+                    # Unexpected error
+                    raise HTTPException(status_code=502, detail=f"DeAPI polling failed ({result_resp.status_code})")
+            
+            # Timeout after max attempts
+            raise HTTPException(status_code=504, detail="Image generation timed out. Please try again.")
+            
     except HTTPException:
         raise
-    except Exception:
-        raise HTTPException(status_code=502, detail="Image generation failed. Please try again.")
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=f"Image generation failed: {str(e)}")
