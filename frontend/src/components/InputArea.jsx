@@ -66,6 +66,21 @@ export default function InputArea({ onSubmit, loading }) {
         </div>
       )}
 
+      {!file && (
+        <div className="mt-4 flex flex-wrap gap-2">
+          {[
+            'Tip: paste headlines for faster checks',
+            'Use screenshots for quoted claims',
+            'Short text gets higher confidence',
+            'Add source link when possible'
+          ].map((tip) => (
+            <span key={tip} className="tip-pill">
+              {tip}
+            </span>
+          ))}
+        </div>
+      )}
+
       {/* Drag & drop zone with 3D effect */}
       <div
         onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
@@ -158,6 +173,13 @@ export default function InputArea({ onSubmit, loading }) {
           )}
         </span>
       </button>
+
+      {loading && (
+        <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="skeleton-card h-20 rounded-xl"></div>
+          <div className="skeleton-card h-20 rounded-xl"></div>
+        </div>
+      )}
 
       {/* Info text */}
       <p className="text-center text-xs mt-4" style={{ color: 'var(--text-secondary)' }}>

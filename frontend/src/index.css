@@ -133,6 +133,12 @@ button {
   animation: fade-in-up 0.5s ease-out both;
 }
 
+/* ── Staggered children ─────────────────────────────────────────────────── */
+.stagger-children > * {
+  animation: fade-in-up 0.6s ease-out both;
+  animation-delay: calc(var(--stagger, 0) * 120ms);
+}
+
 /* ── Pulse loader ────────────────────────────────────────────────────────── */
 @keyframes pulse-dot {
   0%, 80%, 100% { transform: scale(0); }
@@ -159,6 +165,56 @@ button {
 .drop-zone.drag-over {
   border-color: #6366f1;
   background-color: rgba(99, 102, 241, 0.05);
+}
+
+/* ── 3D hover cards ─────────────────────────────────────────────────────── */
+.tilt-card {
+  transform-style: preserve-3d;
+  transition: transform 0.35s ease, box-shadow 0.35s ease, border-color 0.35s ease;
+}
+.tilt-card:hover {
+  transform: translateY(-6px) rotateX(2deg) rotateY(-2deg);
+  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.16);
+  border-color: rgba(99, 102, 241, 0.35);
+}
+
+/* ── Tips pills ─────────────────────────────────────────────────────────── */
+.tip-pill {
+  font-size: 0.7rem;
+  padding: 0.35rem 0.6rem;
+  border-radius: 999px;
+  background: rgba(99, 102, 241, 0.08);
+  color: #a5b4fc;
+  border: 1px solid rgba(99, 102, 241, 0.2);
+}
+
+/* ── Skeletons ──────────────────────────────────────────────────────────── */
+.skeleton-card {
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.04) 0%, rgba(255, 255, 255, 0.12) 50%, rgba(255, 255, 255, 0.04) 100%);
+  background-size: 200% 100%;
+  animation: shimmer 2s infinite;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* ── Footer helpers ─────────────────────────────────────────────────────── */
+.footer-link {
+  display: block;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  transition: color 0.2s ease;
+  text-decoration: none;
+}
+.footer-link:hover {
+  color: #818cf8;
+}
+
+.trust-badge {
+  font-size: 0.7rem;
+  padding: 0.35rem 0.6rem;
+  border-radius: 999px;
+  border: 1px solid rgba(148, 163, 184, 0.3);
+  color: #94a3b8;
+  background: rgba(148, 163, 184, 0.08);
 }
 
 /* Student Assistant dark-mode form readability */

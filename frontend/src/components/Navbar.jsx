@@ -27,16 +27,19 @@ export default function Navbar({ darkMode, toggleDarkMode }) {
           <div className="relative w-10 h-10">
             {/* Glow background */}
             <div className="absolute inset-0 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-xl blur opacity-75 group-hover:opacity-100 transition-opacity"></div>
-            {/* Main button */}
-            <div className="relative w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold text-lg shadow-lg">
-              ✓
+            {/* Main badge */}
+            <div className="relative w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white shadow-lg">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M12 2l7 3v6c0 5.2-3.8 8.4-7 10-3.2-1.6-7-4.8-7-10V5l7-3z" />
+                <path d="M8.5 12.3l2.3 2.3 4.7-4.8" />
+              </svg>
             </div>
           </div>
           <div className="hidden sm:block">
             <span className="text-lg font-bold tracking-tight bg-gradient-to-r from-indigo-500 to-purple-600 bg-clip-text text-transparent">
               RealityCheck
             </span>
-            <span className="text-xs block text-indigo-400 font-medium">AI Fact Checker</span>
+            <span className="text-xs block text-indigo-400 font-medium">Trust Signal Engine</span>
           </div>
         </Link>
 

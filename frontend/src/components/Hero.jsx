@@ -59,18 +59,44 @@ export default function Hero() {
         </div>
 
         {/* Trust indicators */}
-        <div className="pt-12 grid grid-cols-3 gap-4 sm:gap-8 text-center">
+        <div className="pt-12 grid grid-cols-3 gap-4 sm:gap-8 text-center stagger-children">
           {[
             { icon: '⚡', label: 'Instant Analysis', value: '<100ms' },
             { icon: '📚', label: 'Source Verified', value: '10K+ Sources' },
             { icon: '🎯', label: 'Accuracy Rate', value: '94.2%' }
-          ].map((stat) => (
-            <div key={stat.label} className="p-4 rounded-lg bg-white/5 backdrop-blur-sm border border-white/10 hover:border-indigo-500/30 transition-all hover:bg-white/10">
+          ].map((stat, idx) => (
+            <div
+              key={stat.label}
+              className="p-4 rounded-lg bg-white/5 backdrop-blur-sm border border-white/10 hover:border-indigo-500/30 transition-all hover:bg-white/10"
+              style={{ '--stagger': idx }}
+            >
               <div className="text-2xl mb-2">{stat.icon}</div>
               <p className="text-xs sm:text-sm font-semibold text-indigo-300">{stat.label}</p>
               <p className="text-lg sm:text-xl font-bold" style={{ color: 'var(--text-primary)' }}>{stat.value}</p>
             </div>
           ))}
+        </div>
+
+        {/* Feature strip */}
+        <div className="pt-10">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 stagger-children">
+            {[
+              { icon: '🔬', title: 'Source Lineage', desc: 'Trace every claim to verified sources.' },
+              { icon: '🧭', title: 'Bias Lens', desc: 'Detect framing patterns and slant.' },
+              { icon: '🧠', title: 'Context Graph', desc: 'Summaries with key relations.' },
+              { icon: '🧷', title: 'Citation Pack', desc: 'Export evidence in one click.' }
+            ].map((item, idx) => (
+              <div
+                key={item.title}
+                className="tilt-card rounded-2xl p-4 text-left bg-white/5 backdrop-blur-sm border border-white/10"
+                style={{ '--stagger': idx + 1 }}
+              >
+                <div className="text-2xl mb-2">{item.icon}</div>
+                <p className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>{item.title}</p>
+                <p className="text-xs mt-1" style={{ color: 'var(--text-secondary)' }}>{item.desc}</p>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </section>
