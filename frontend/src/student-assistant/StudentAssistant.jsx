@@ -78,31 +78,30 @@ export default function StudentAssistant() {
   };
 
   return (
-    <main className="student-assistant max-w-6xl mx-auto py-8 px-4 space-y-6 animate-fade-in-up">
-      <div className="rounded-xl p-5" style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)' }}>
-        <h1 className="text-2xl font-bold mb-2" style={{ color: 'var(--text-primary)' }}>
+    <main className="student-assistant student-assistant-page max-w-6xl mx-auto py-10 px-4 space-y-6 animate-fade-in-up">
+      <div className="student-hero rounded-2xl p-6">
+        <h1 className="text-3xl font-bold mb-2">
           AI Student Research Copilot
         </h1>
-        <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+        <p className="text-sm">
           Grounded RAG assistant for study notes with explainable outputs and structured tools.
         </p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <section className="rounded-xl p-5" style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)' }}>
+        <section className="student-card rounded-xl p-5">
           <h2 className="text-lg font-semibold mb-3">1) Upload Notes</h2>
           <form className="space-y-3" onSubmit={handleUpload}>
             <input
               type="file"
               accept=".pdf,image/*"
               onChange={(e) => setFile(e.target.files?.[0] || null)}
-              className="w-full text-sm rounded-lg p-2"
-              style={{ border: '1px solid var(--border-color)' }}
+              className="student-input w-full text-sm rounded-lg p-2"
             />
             <button
               type="submit"
               disabled={uploadState.loading || !file}
-              className="px-4 py-2 rounded-lg text-white bg-indigo-500 hover:bg-indigo-600 disabled:opacity-60"
+              className="student-button student-button-primary"
             >
               {uploadState.loading ? 'Uploading...' : 'Upload & Index'}
             </button>
@@ -115,7 +114,7 @@ export default function StudentAssistant() {
           )}
         </section>
 
-        <section className="rounded-xl p-5" style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)' }}>
+        <section className="student-card rounded-xl p-5">
           <h2 className="text-lg font-semibold mb-3">2) Ask Question</h2>
           <form className="space-y-3" onSubmit={handleAsk}>
             <textarea
@@ -123,13 +122,12 @@ export default function StudentAssistant() {
               onChange={(e) => setQuestion(e.target.value)}
               rows={4}
               placeholder="Ask grounded questions based on uploaded notes..."
-              className="w-full rounded-lg p-3 text-sm"
-              style={{ border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-primary)' }}
+              className="student-input w-full rounded-lg p-3 text-sm"
             />
             <button
               type="submit"
               disabled={askState.loading || !question.trim()}
-              className="px-4 py-2 rounded-lg text-white bg-indigo-500 hover:bg-indigo-600 disabled:opacity-60"
+              className="student-button student-button-primary"
             >
               {askState.loading ? 'Answering...' : 'Ask'}
             </button>
@@ -138,14 +136,13 @@ export default function StudentAssistant() {
         </section>
       </div>
 
-      <section className="rounded-xl p-5" style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)' }}>
+      <section className="student-card rounded-xl p-5">
         <h2 className="text-lg font-semibold mb-3">3) Generate Study Tools</h2>
         <form className="flex flex-col sm:flex-row gap-3" onSubmit={handleGenerate}>
           <select
             value={mode}
             onChange={(e) => setMode(e.target.value)}
-            className="rounded-lg p-2 text-sm"
-            style={{ border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-primary)' }}
+            className="student-input rounded-lg p-2 text-sm"
           >
             {MODE_OPTIONS.map((opt) => (
               <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -154,7 +151,7 @@ export default function StudentAssistant() {
           <button
             type="submit"
             disabled={generateState.loading}
-            className="px-4 py-2 rounded-lg text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-60"
+            className="student-button student-button-accent"
           >
             {generateState.loading ? 'Generating...' : `Generate ${selectedModeLabel}`}
           </button>
@@ -162,7 +159,7 @@ export default function StudentAssistant() {
         {generateState.error && <p className="mt-3 text-sm text-red-500">{generateState.error}</p>}
       </section>
 
-      <section className="rounded-xl p-5 space-y-4" style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)' }}>
+      <section className="student-card rounded-xl p-5 space-y-4">
         <h2 className="text-lg font-semibold">4) Output Panel</h2>
 
         {askState.data && (
@@ -171,10 +168,10 @@ export default function StudentAssistant() {
               <h3 className="font-semibold">Structured Answer</h3>
               <ConfidenceBadge value={askState.data.confidence || 0} />
             </div>
-            <div className="rounded-lg p-4" style={{ border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-primary)' }}>
+            <div className="student-panel rounded-lg p-4">
               <p className="text-sm mb-3 whitespace-pre-wrap">{askState.data.answer}</p>
-              <div className="pt-3 border-t" style={{ borderColor: 'var(--border-color)' }}>
-                <p className="text-xs font-semibold uppercase tracking-wide mb-1" style={{ color: 'var(--text-secondary)' }}>
+              <div className="pt-3 border-t student-divider">
+                <p className="text-xs font-semibold uppercase tracking-wide mb-1 student-subtle">
                   Simple Explanation
                 </p>
                 <p className="text-sm whitespace-pre-wrap">{askState.data.explanation_simple}</p>
@@ -185,13 +182,9 @@ export default function StudentAssistant() {
               <summary className="cursor-pointer text-sm font-medium">Sources</summary>
               <div className="mt-2 space-y-2">
                 {(askState.data.sources || []).map((source) => (
-                  <div
-                    key={source.chunk_id}
-                    className="rounded-lg p-3 text-sm"
-                    style={{ border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-primary)' }}
-                  >
+                  <div key={source.chunk_id} className="student-panel rounded-lg p-3 text-sm">
                     <p className="font-semibold mb-1">Chunk {source.chunk_id}</p>
-                    <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>{source.preview}</p>
+                    <p className="text-xs student-subtle">{source.preview}</p>
                   </div>
                 ))}
               </div>
@@ -200,7 +193,7 @@ export default function StudentAssistant() {
         )}
 
         {generateState.data?.data?.summary && (
-          <div className="rounded-lg p-4" style={{ border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-primary)' }}>
+          <div className="student-panel rounded-lg p-4">
             <h3 className="font-semibold mb-2">Executive Summary</h3>
             <p className="text-sm whitespace-pre-wrap">{generateState.data.data.summary}</p>
           </div>
@@ -211,14 +204,10 @@ export default function StudentAssistant() {
             <h3 className="font-semibold mb-2">Flashcards</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               {generateState.data.data.flashcards.map((card, idx) => (
-                <div
-                  key={`${card.question}-${idx}`}
-                  className="rounded-lg p-4"
-                  style={{ border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-primary)' }}
-                >
-                  <p className="text-xs uppercase mb-1" style={{ color: 'var(--text-secondary)' }}>Question</p>
+                <div key={`${card.question}-${idx}`} className="student-panel rounded-lg p-4">
+                  <p className="text-xs uppercase mb-1 student-subtle">Question</p>
                   <p className="text-sm font-semibold mb-3">{card.question}</p>
-                  <p className="text-xs uppercase mb-1" style={{ color: 'var(--text-secondary)' }}>Answer</p>
+                  <p className="text-xs uppercase mb-1 student-subtle">Answer</p>
                   <p className="text-sm">{card.answer}</p>
                 </div>
               ))}
@@ -231,11 +220,7 @@ export default function StudentAssistant() {
             <h3 className="font-semibold mb-2">MCQs</h3>
             <div className="space-y-3">
               {generateState.data.data.mcqs.map((item, idx) => (
-                <div
-                  key={`${item.question}-${idx}`}
-                  className="rounded-lg p-4"
-                  style={{ border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-primary)' }}
-                >
+                <div key={`${item.question}-${idx}`} className="student-panel rounded-lg p-4">
                   <p className="font-semibold mb-2">{idx + 1}. {item.question}</p>
                   <ul className="text-sm space-y-1">
                     <li>A. {item.options?.A}</li>
@@ -255,11 +240,7 @@ export default function StudentAssistant() {
             <h3 className="font-semibold mb-2">Key Concepts</h3>
             <ul className="space-y-2">
               {generateState.data.data.key_concepts.map((item, idx) => (
-                <li
-                  key={`${item.concept}-${idx}`}
-                  className="rounded-lg p-3 text-sm"
-                  style={{ border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-primary)' }}
-                >
+                <li key={`${item.concept}-${idx}`} className="student-panel rounded-lg p-3 text-sm">
                   <p className="font-semibold">{item.concept}</p>
                   <p>{item.explanation}</p>
                 </li>
@@ -273,11 +254,7 @@ export default function StudentAssistant() {
             <h3 className="font-semibold mb-2">Viva Questions</h3>
             <ul className="space-y-2">
               {generateState.data.data.viva_questions.map((item, idx) => (
-                <li
-                  key={`${item.question}-${idx}`}
-                  className="rounded-lg p-3 text-sm"
-                  style={{ border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-primary)' }}
-                >
+                <li key={`${item.question}-${idx}`} className="student-panel rounded-lg p-3 text-sm">
                   <p className="font-semibold">{item.question}</p>
                   <p className="mt-1">{item.model_answer}</p>
                 </li>
@@ -291,11 +268,7 @@ export default function StudentAssistant() {
             <h3 className="font-semibold mb-2">Concept Relationships</h3>
             <ul className="space-y-2">
               {generateState.data.data.concept_relationships.map((item, idx) => (
-                <li
-                  key={`${item.concept_a}-${item.concept_b}-${idx}`}
-                  className="rounded-lg p-3 text-sm"
-                  style={{ border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-primary)' }}
-                >
+                <li key={`${item.concept_a}-${item.concept_b}-${idx}`} className="student-panel rounded-lg p-3 text-sm">
                   <p className="font-semibold">
                     {`${item.concept_a} -> ${item.relation} -> ${item.concept_b}`}
                   </p>

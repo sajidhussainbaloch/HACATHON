@@ -1,15 +1,19 @@
 @import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:wght@600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap');
 
 /* ── Custom theme tokens ─────────────────────────────────────────────────── */
 :root {
   --color-real: #22c55e;
   --color-fake: #ef4444;
   --color-misleading: #eab308;
-  --bg-primary: #f8fafc;
+  --bg-primary: #f6f7fb;
   --bg-card: #ffffff;
   --text-primary: #0f172a;
-  --text-secondary: #64748b;
+  --text-secondary: #475569;
   --border-color: #e2e8f0;
+  --accent-1: #0ea5e9;
+  --accent-2: #f97316;
+  --accent-3: #10b981;
 }
 
 .dark {
@@ -23,8 +27,12 @@
 body {
   background-color: var(--bg-primary);
   color: var(--text-primary);
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-family: 'Space Grotesk', system-ui, -apple-system, sans-serif;
   transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+h1, h2, h3, h4 {
+  font-family: 'Fraunces', 'Space Grotesk', serif;
 }
 
 /* ── Confidence ring animation ───────────────────────────────────────────── */
@@ -84,4 +92,85 @@ body {
 .student-assistant input::placeholder,
 .student-assistant textarea::placeholder {
   color: var(--text-secondary);
+}
+
+.student-assistant-page {
+  position: relative;
+}
+
+.student-assistant-page::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background:
+    radial-gradient(circle at 20% 20%, rgba(14, 165, 233, 0.12), transparent 45%),
+    radial-gradient(circle at 80% 15%, rgba(249, 115, 22, 0.12), transparent 50%),
+    radial-gradient(circle at 40% 80%, rgba(16, 185, 129, 0.12), transparent 45%);
+}
+
+.student-hero {
+  background: linear-gradient(120deg, rgba(15, 118, 110, 0.1), rgba(251, 146, 60, 0.12));
+  border: 1px solid rgba(15, 118, 110, 0.18);
+  color: var(--text-primary);
+}
+
+.student-hero p {
+  color: var(--text-secondary);
+}
+
+.student-card {
+  background: var(--bg-card);
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
+}
+
+.student-panel {
+  background: #f8fafc;
+  border: 1px solid rgba(15, 23, 42, 0.1);
+}
+
+.student-input {
+  border: 1px solid rgba(15, 23, 42, 0.16);
+  background: #ffffff;
+  color: var(--text-primary);
+}
+
+.student-button {
+  padding: 0.55rem 1.2rem;
+  border-radius: 0.75rem;
+  font-weight: 600;
+  color: #0f172a;
+  background: linear-gradient(120deg, #e2e8f0, #f8fafc);
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.student-button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.12);
+}
+
+.student-button:disabled {
+  opacity: 0.6;
+  transform: none;
+  box-shadow: none;
+}
+
+.student-button-primary {
+  color: #0f172a;
+  background: linear-gradient(120deg, rgba(14, 165, 233, 0.25), rgba(14, 165, 233, 0.1));
+}
+
+.student-button-accent {
+  color: #0f172a;
+  background: linear-gradient(120deg, rgba(16, 185, 129, 0.25), rgba(16, 185, 129, 0.1));
+}
+
+.student-subtle {
+  color: var(--text-secondary);
+}
+
+.student-divider {
+  border-color: rgba(15, 23, 42, 0.1);
 }

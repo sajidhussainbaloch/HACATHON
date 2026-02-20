@@ -79,6 +79,121 @@ def _split_sentences(text: str) -> list[str]:
     return [p.strip() for p in parts if p and p.strip()]
 
 
+def _first_sentences(text: str, limit: int) -> str:
+    sentences = _split_sentences(text)
+    return " ".join(sentences[:limit]).strip()
+
+
+def _concept_from_sentence(sentence: str) -> str:
+    words = [w for w in re.split(r"\W+", sentence) if w]
+    return " ".join(words[:5]).strip() or "Key concept"
+
+
+def _fallback_ask_response(sources: list[dict]) -> dict:
+    combined = " ".join([source["text"] for source in sources])
+    answer = _first_sentences(combined, 3) or "Insufficient information in uploaded material."
+    explanation = _first_sentences(combined, 2) or "The notes are too short to answer this question clearly."
+    filtered_sources = sources[:3]
+    return {
+        "answer": answer[:2200],
+        "explanation_simple": explanation[:1800],
+        "sources": [
+            {
+                "chunk_id": s["chunk_id"],
+                "preview": s["preview"],
+            }
+            for s in filtered_sources
+        ],
+        "confidence": 40,
+    }
+
+
+def _fallback_generate(mode: str, chunks: list[dict]) -> dict:
+    combined = " ".join([chunk["text"] for chunk in chunks])
+    base_summary = _first_sentences(combined, 5) or ""
+    chunk_ids = [chunk["chunk_id"] for chunk in chunks[:3]]
+
+    if mode == "summary":
+        return {"summary": base_summary or "Summary not available.", "evidence_chunk_ids": chunk_ids}
+
+    if mode == "keypoints":
+        concepts = []
+        for sentence in _split_sentences(combined)[:6]:
+            concepts.append(
+                {
+                    "concept": _concept_from_sentence(sentence),
+                    "explanation": sentence,
+                    "evidence_chunk_ids": chunk_ids,
+                }
+            )
+        return {"key_concepts": concepts}
+
+    if mode == "flashcards":
+        cards = []
+        for sentence in _split_sentences(combined)[:6]:
+            concept = _concept_from_sentence(sentence)
+            cards.append(
+                {
+                    "question": f"What is {concept}?",
+                    "answer": sentence,
+                    "evidence_chunk_ids": chunk_ids,
+                }
+            )
+        return {"flashcards": cards}
+
+    if mode == "mcq":
+        sentences = _split_sentences(combined)[:4]
+        options = [
+            _concept_from_sentence(sentence) for sentence in sentences
+        ]
+        while len(options) < 4:
+            options.append("Not mentioned")
+        return {
+            "mcqs": [
+                {
+                    "question": "Which concept is discussed in the notes?",
+                    "options": {"A": options[0], "B": options[1], "C": options[2], "D": options[3]},
+                    "correct": "A",
+                    "explanation": base_summary or "Refer to the uploaded notes.",
+                    "evidence_chunk_ids": chunk_ids,
+                }
+            ]
+        }
+
+    if mode == "viva":
+        questions = []
+        for sentence in _split_sentences(combined)[:5]:
+            concept = _concept_from_sentence(sentence)
+            questions.append(
+                {
+                    "question": f"Explain {concept}.",
+                    "model_answer": sentence,
+                    "difficulty": "medium",
+                    "evidence_chunk_ids": chunk_ids,
+                }
+            )
+        return {"viva_questions": questions}
+
+    if mode == "concept_map":
+        sentences = _split_sentences(combined)[:6]
+        relationships = []
+        for idx in range(len(sentences) - 1):
+            concept_a = _concept_from_sentence(sentences[idx])
+            concept_b = _concept_from_sentence(sentences[idx + 1])
+            relationships.append(
+                {
+                    "concept_a": concept_a,
+                    "relation": "related to",
+                    "concept_b": concept_b,
+                    "explanation": sentences[idx],
+                    "evidence_chunk_ids": chunk_ids,
+                }
+            )
+        return {"concept_relationships": relationships}
+
+    return {}
+
+
 def _chunk_text(text: str, target_tokens: int = CHUNK_TARGET_TOKENS) -> list[str]:
     sentences = _split_sentences(text)
     if not sentences:
@@ -237,33 +352,29 @@ async def _generate_text(prompt: str, max_new_tokens: int) -> str:
     errors: list[str] = []
     async with httpx.AsyncClient(timeout=90) as client:
         for model in _hf_text_models():
-            endpoints = [
-                f"https://router.huggingface.co/hf-inference/models/{model}",
-                f"https://api-inference.huggingface.co/models/{model}",
-            ]
-            for url in endpoints:
-                try:
-                    response = await client.post(url, headers=headers, json=payload)
-                except httpx.HTTPError as exc:
-                    errors.append(f"{model}: {exc}")
-                    continue
+            url = f"https://router.huggingface.co/hf-inference/models/{model}"
+            try:
+                response = await client.post(url, headers=headers, json=payload)
+            except httpx.HTTPError as exc:
+                errors.append(f"{model}: {exc}")
+                continue
 
-                if response.status_code != 200:
-                    detail = response.text.strip()
-                    if len(detail) > 140:
-                        detail = detail[:140] + "..."
-                    errors.append(f"{model}: status {response.status_code} ({detail})")
-                    continue
+            if response.status_code != 200:
+                detail = response.text.strip()
+                if len(detail) > 140:
+                    detail = detail[:140] + "..."
+                errors.append(f"{model}: status {response.status_code} ({detail})")
+                continue
 
-                data = response.json()
-                if isinstance(data, list) and data and isinstance(data[0], dict):
-                    if "generated_text" in data[0]:
-                        return str(data[0]["generated_text"]).strip()
-                if isinstance(data, dict) and "generated_text" in data:
-                    return str(data["generated_text"]).strip()
-                if isinstance(data, str):
-                    return data.strip()
-                errors.append(f"{model}: unexpected response shape")
+            data = response.json()
+            if isinstance(data, list) and data and isinstance(data[0], dict):
+                if "generated_text" in data[0]:
+                    return str(data[0]["generated_text"]).strip()
+            if isinstance(data, dict) and "generated_text" in data:
+                return str(data["generated_text"]).strip()
+            if isinstance(data, str):
+                return data.strip()
+            errors.append(f"{model}: unexpected response shape")
 
     raise HTTPException(
         status_code=502,
@@ -426,8 +537,11 @@ Return JSON:
 }}
 """.strip()
 
-    raw = await _generate_text(prompt, max_new_tokens=MAX_OUTPUT_TOKENS_ASK)
-    parsed = _extract_json_blob(raw) or {}
+    try:
+        raw = await _generate_text(prompt, max_new_tokens=MAX_OUTPUT_TOKENS_ASK)
+        parsed = _extract_json_blob(raw) or {}
+    except HTTPException:
+        return _fallback_ask_response(sources)
 
     answer = str(parsed.get("answer", "")).strip()
     simple = str(parsed.get("explanation_simple", "")).strip()
@@ -542,10 +656,14 @@ Output schema:
 {schema_map[mode]}
 """.strip()
 
-    raw = await _generate_text(prompt, max_new_tokens=MAX_OUTPUT_TOKENS_GENERATE)
-    parsed = _extract_json_blob(raw)
-    if not parsed:
-        raise HTTPException(status_code=502, detail="Model did not return valid JSON.")
+    try:
+        raw = await _generate_text(prompt, max_new_tokens=MAX_OUTPUT_TOKENS_GENERATE)
+        parsed = _extract_json_blob(raw)
+        if not parsed:
+            raise HTTPException(status_code=502, detail="Model did not return valid JSON.")
 
-    validated = _validate_mode_output(mode, parsed, max_id=len(_student_chunks))
-    return {"mode": mode, "data": validated}
+        validated = _validate_mode_output(mode, parsed, max_id=len(_student_chunks))
+        return {"mode": mode, "data": validated}
+    except HTTPException:
+        fallback = _fallback_generate(mode, _student_chunks)
+        return {"mode": mode, "data": _validate_mode_output(mode, fallback, max_id=len(_student_chunks))}
