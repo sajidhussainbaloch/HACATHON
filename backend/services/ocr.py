@@ -39,11 +39,22 @@ async def extract_text_from_image(file: UploadFile) -> str | None:
         api_key = os.getenv("OCR_SPACE_API_KEY", "K87899142C87")
         print(f"ℹ️  Using API key: {api_key[:10]}...")
 
+        # Map content type to file extension
+        ext_map = {
+            "image/png": "png",
+            "image/jpeg": "jpg",
+            "image/jpg": "jpg",
+            "image/webp": "webp",
+            "image/bmp": "bmp",
+        }
+        ext = ext_map.get(file.content_type, "png")
+        filename = f"image.{ext}"
+
         # Call OCR.space API
         print("ℹ️  Sending image to OCR.space API...")
         
         async with httpx.AsyncClient(timeout=30.0) as client:
-            files = {"filename": ("image", contents, file.content_type)}
+            files = {"filename": (filename, contents, file.content_type)}
             data = {
                 "apikey": api_key,
                 "isOverlayRequired": "false",
