@@ -82,7 +82,17 @@ async def extract_text_from_image(file: UploadFile) -> str | None:
             print(f"⚠️  OCR error: {error_msg}")
             return None
         
-        parsed_text = result.get("ParsedText", "").strip()
+        # Handle nested ParsedResults structure
+        parsed_text = ""
+        if "ParsedResults" in result and isinstance(result["ParsedResults"], list):
+            for item in result["ParsedResults"]:
+                if "ParsedText" in item:
+                    parsed_text += item["ParsedText"]
+        else:
+            # Fallback to top-level ParsedText
+            parsed_text = result.get("ParsedText", "")
+        
+        parsed_text = parsed_text.strip()
         
         if parsed_text:
             print(f"✅ OCR successful! Extracted {len(parsed_text)} characters")
