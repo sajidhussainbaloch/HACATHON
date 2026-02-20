@@ -28,135 +28,76 @@ HF_FALLBACK_MODELS = [
 ]
 STABILITY_API_KEY = os.getenv("STABILITY_API_KEY")
 STABILITY_ENGINE_ID = os.getenv("STABILITY_ENGINE_ID", "stable-diffusion-xl-1024-v1-0")
+DEAPI_KEY = os.getenv("DEAPI_KEY")
+DEAPI_BASE_URL = os.getenv("DEAPI_BASE_URL")
 
 
 class GenerateRequest(BaseModel):
     prompt: str
     negative_prompt: Optional[str] = None
+    model: Optional[str] = None
 
 
 @router.post("/generate")
 async def generate_image(payload: GenerateRequest):
     prompt = (payload.prompt or "").strip()
     negative_prompt = (payload.negative_prompt or "").strip()
-    if len(prompt) < 3:
-        raise HTTPException(status_code=400, detail="Prompt is too short.")
+    # Use DeAPI as the single image provider for generation. This keeps other
+    # application tabs untouched and confines changes to image generation only.
+    if not DEAPI_KEY or not DEAPI_BASE_URL:
+        raise HTTPException(status_code=503, detail="DEAPI_KEY or DEAPI_BASE_URL is not configured.")
 
-    if not HF_API_KEY:
-        raise HTTPException(status_code=503, detail="HF_API_KEY is not configured.")
+    deapi_headers = {
+        "Authorization": f"Bearer {DEAPI_KEY}",
+        "Accept": "application/json",
+        "Content-Type": "application/json",
+    }
 
-    headers = {"Authorization": f"Bearer {HF_API_KEY}"}
-
-    async def request_model(model_id: str):
-        # Try the Hugging Face router endpoint first — some models are hosted by
-        # specific inference providers and the router can route to working providers.
-        router_endpoint = f"https://router.huggingface.co/hf-inference/models/{model_id}"
-        direct_endpoint = f"https://api-inference.huggingface.co/models/{model_id}"
-        request_body = {"inputs": prompt}
+    async def request_deapi(model_name: str):
+        body = {"model": model_name, "prompt": prompt}
         if negative_prompt:
-            request_body["parameters"] = {"negative_prompt": negative_prompt}
-        async with httpx.AsyncClient(timeout=30.0) as client:
-            # First try router
-            try:
-                r = await client.post(router_endpoint, headers=headers, json=request_body)
-            except Exception:
-                r = None
-            # If router returned 410/404 or failed, fallback to the direct inference endpoint
-            if r is None or (r.status_code in {404, 410}):
-                return await client.post(direct_endpoint, headers=headers, json=request_body)
-            return r
-
-    async def request_stability(engine_id: str):
-        endpoint = f"https://api.stability.ai/v1/generation/{engine_id}/text-to-image"
-        stability_headers = {
-            "Authorization": f"Bearer {STABILITY_API_KEY}",
-            "Accept": "application/json",
-            "Content-Type": "application/json",
-        }
-        prompts = [{"text": prompt, "weight": 1}]
-        if negative_prompt:
-            prompts.append({"text": negative_prompt, "weight": -1})
-        payload = {
-            "text_prompts": prompts,
-            "cfg_scale": 7,
-            "steps": 30,
-            "samples": 1,
-            "height": 1024,
-            "width": 1024,
-        }
+            body["negative_prompt"] = negative_prompt
         async with httpx.AsyncClient(timeout=60.0) as client:
-            return await client.post(endpoint, headers=stability_headers, json=payload)
+            return await client.post(DEAPI_BASE_URL, headers=deapi_headers, json=body)
 
     try:
-        attempts = []
-        for candidate in HF_FALLBACK_MODELS:
-            resp = await request_model(candidate)
-            attempts.append((candidate, resp.status_code))
+        model_requested = getattr(payload, "model", None) if hasattr(payload, "model") else None
+        model_requested = (model_requested or "FLUX.1 schnell").strip()
 
-            if resp.status_code == 503:
-                raise HTTPException(status_code=503, detail="Model is warming up. Please retry in a moment.")
-            if resp.status_code in {401, 403}:
-                raise HTTPException(status_code=502, detail="Model access denied. Check HF token permissions.")
-            if resp.status_code >= 400:
-                # try next candidate
-                continue
+        resp = await request_deapi(model_requested)
+        if resp.status_code >= 400:
+            if resp.status_code == 401:
+                raise HTTPException(status_code=502, detail="DeAPI authentication failed. Check DEAPI_KEY.")
+            if resp.status_code == 429:
+                raise HTTPException(status_code=502, detail="DeAPI rate limited. Try again later.")
+            raise HTTPException(status_code=502, detail=f"DeAPI request failed ({resp.status_code}).")
 
-            content_type = resp.headers.get("content-type", "")
-            if "application/json" in content_type:
-                data = resp.json()
-                if isinstance(data, dict) and data.get("error"):
-                    continue
-                continue
-
+        ct = resp.headers.get("content-type", "")
+        if ct.startswith("image/"):
             image_bytes = resp.content
-            if not image_bytes:
-                continue
-
-            try:
-                img = Image.open(io.BytesIO(image_bytes))
-                width, height = img.size
-            except Exception:
-                width, height = None, None
-
             encoded = base64.b64encode(image_bytes).decode("ascii")
-            return {
-                "image_base64": encoded,
-                "content_type": content_type or "image/png",
-                "width": width,
-                "height": height,
-                "model": candidate,
-            }
+            return {"image_base64": encoded, "content_type": ct, "model": model_requested}
 
-        # If HF candidates all failed, try Stability AI if configured
-        attempted = ", ".join([f"{m}({s})" for m, s in attempts]) if attempts else "none"
-        if STABILITY_API_KEY:
-            try:
-                stability_resp = await request_stability(STABILITY_ENGINE_ID)
-                if stability_resp.status_code < 400:
-                    data = stability_resp.json()
-                    artifacts = data.get("artifacts", []) if isinstance(data, dict) else []
-                    if artifacts and artifacts[0].get("base64"):
-                        encoded = artifacts[0]["base64"]
-                        return {
-                            "image_base64": encoded,
-                            "content_type": "image/png",
-                            "width": 1024,
-                            "height": 1024,
-                            "model": f"stability:{STABILITY_ENGINE_ID}",
-                        }
-                    raise HTTPException(status_code=502, detail="Stability AI returned an empty image.")
-                else:
-                    attempted = attempted + f", stability({stability_resp.status_code})"
-            except Exception:
-                attempted = attempted + ", stability(error)"
+        data = resp.json()
+        encoded = None
+        if isinstance(data, dict):
+            if data.get("image_base64"):
+                encoded = data.get("image_base64")
+            elif data.get("base64"):
+                encoded = data.get("base64")
+            elif data.get("b64"):
+                encoded = data.get("b64")
+            elif data.get("result") and isinstance(data.get("result"), str):
+                encoded = data.get("result")
+            elif data.get("artifacts") and isinstance(data.get("artifacts"), list):
+                first = data.get("artifacts")[0]
+                if isinstance(first, dict) and first.get("base64"):
+                    encoded = first.get("base64")
 
-        raise HTTPException(
-            status_code=502,
-            detail=(
-                "Image generation failed for all free Hugging Face candidates. "
-                f"Attempts: {attempted}. If you can, set `STABILITY_API_KEY` for a more reliable provider."
-            ),
-        )
+        if not encoded:
+            raise HTTPException(status_code=502, detail="DeAPI returned an unexpected response.")
+
+        return {"image_base64": encoded, "content_type": "image/png", "model": model_requested}
     except HTTPException:
         raise
     except Exception:
