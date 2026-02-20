@@ -1,78 +1,130 @@
 import { useEffect, useRef } from 'react';
 
 export default function CursorAnimation() {
-  const dotsRef = useRef([]);
+  const canvasRef = useRef(null);
   const mousePos = useRef({ x: 0, y: 0 });
+  const particles = useRef([]);
 
   useEffect(() => {
-    // Create cursor dots
-    const dotCount = 12;
-    const container = document.body;
-    
-    dotsRef.current = Array.from({ length: dotCount }, (_, i) => {
-      const dot = document.createElement('div');
-      dot.className = `cursor-dot ${i % 2 === 0 ? 'cursor-dot-outer' : 'cursor-dot-inner'}`;
-      dot.style.left = '0px';
-      dot.style.top = '0px';
-      container.appendChild(dot);
-      return {
-        element: dot,
-        x: mousePos.current.x,
-        y: mousePos.current.y,
-        vx: 0,
-        vy: 0,
-      };
-    });
+    const canvas = document.createElement('canvas');
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    canvas.style.position = 'fixed';
+    canvas.style.top = '0';
+    canvas.style.left = '0';
+    canvas.style.pointerEvents = 'none';
+    canvas.style.zIndex = '9999';
+    document.body.appendChild(canvas);
+    canvasRef.current = canvas;
 
-    // Listen to mouse movement
+    const ctx = canvas.getContext('2d');
+    const particleCount = 20;
+
+    // Initialize particles
+    particles.current = Array.from({ length: particleCount }, (_, i) => ({
+      x: window.innerWidth / 2,
+      y: window.innerHeight / 2,
+      targetX: window.innerWidth / 2,
+      targetY: window.innerHeight / 2,
+      vx: 0,
+      vy: 0,
+      radius: 3 - (i / particleCount) * 2.5,
+      delay: i * 0.02,
+      opacity: 1 - (i / particleCount) * 0.7,
+    }));
+
+    // Mouse tracking
     const handleMouseMove = (e) => {
       mousePos.current = { x: e.clientX, y: e.clientY };
+    };
+
+    // Window resize
+    const handleResize = () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
     };
 
     // Animation loop
     let animationId;
     const animate = () => {
-      dotsRef.current.forEach((dot, i) => {
-        // Calculate direction to mouse
-        const dx = mousePos.current.x - dot.x;
-        const dy = mousePos.current.y - dot.y;
-        const distance = Math.sqrt(dx * dx + dy * dy);
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-        // Easing towards mouse
-        const speed = 0.08 + (i * 0.01);
-        if (distance > 1) {
-          dot.vx += (dx / distance) * speed;
-          dot.vy += (dy / distance) * speed;
+      // Update and draw particles
+      particles.current.forEach((particle, i) => {
+        const isFirst = i === 0;
+        
+        if (isFirst) {
+          // First particle follows mouse directly
+          particle.targetX = mousePos.current.x;
+          particle.targetY = mousePos.current.y;
+        } else {
+          // Other particles follow the previous particle
+          const prevParticle = particles.current[i - 1];
+          particle.targetX = prevParticle.x;
+          particle.targetY = prevParticle.y;
         }
 
-        // Apply velocity with friction
-        dot.vx *= 0.92;
-        dot.vy *= 0.92;
+        // Smooth easing towards target
+        const easing = 0.25;
+        particle.vx += (particle.targetX - particle.x) * easing;
+        particle.vy += (particle.targetY - particle.y) * easing;
+
+        // Friction
+        particle.vx *= 0.85;
+        particle.vy *= 0.85;
 
         // Update position
-        dot.x += dot.vx;
-        dot.y += dot.vy;
+        particle.x += particle.vx;
+        particle.y += particle.vy;
 
-        // Update DOM
-        dot.element.style.left = `${dot.x}px`;
-        dot.element.style.top = `${dot.y}px`;
+        // Calculate opacity with distance-based glow
+        const distance = Math.sqrt(particle.vx ** 2 + particle.vy ** 2);
+        const dynamicOpacity = particle.opacity * (0.5 + Math.min(distance / 5, 0.5));
+
+        // Draw particle with glow effect
+        ctx.save();
+        ctx.globalAlpha = dynamicOpacity;
+
+        // Glow
+        const gradient = ctx.createRadialGradient(
+          particle.x,
+          particle.y,
+          0,
+          particle.x,
+          particle.y,
+          particle.radius * 3
+        );
+        gradient.addColorStop(0, 'rgba(6, 182, 212, 0.8)');
+        gradient.addColorStop(1, 'rgba(6, 182, 212, 0)');
+        ctx.fillStyle = gradient;
+        ctx.beginPath();
+        ctx.arc(particle.x, particle.y, particle.radius * 3, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Core
+        ctx.fillStyle = `rgba(6, 182, 212, ${dynamicOpacity})`;
+        ctx.beginPath();
+        ctx.arc(particle.x, particle.y, particle.radius, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.restore();
       });
 
       animationId = requestAnimationFrame(animate);
     };
 
     document.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('resize', handleResize);
     animationId = requestAnimationFrame(animate);
 
     // Cleanup
     return () => {
       document.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('resize', handleResize);
       cancelAnimationFrame(animationId);
-      dotsRef.current.forEach((dot) => {
-        if (dot.element.parentNode) {
-          dot.element.parentNode.removeChild(dot.element);
-        }
-      });
+      if (canvas.parentNode) {
+        canvas.parentNode.removeChild(canvas);
+      }
     };
   }, []);
 

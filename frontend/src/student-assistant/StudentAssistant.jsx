@@ -4,7 +4,6 @@ import {
   generateStudyTool,
   uploadStudentNotes,
 } from '../services/api';
-import CursorAnimation from '../components/CursorAnimation';
 import {
   downloadFile,
   formatMCQForDownload,
@@ -189,9 +188,7 @@ export default function StudentAssistant() {
   };
 
   return (
-    <>
-      <CursorAnimation />
-      <main className="student-assistant student-assistant-page max-w-6xl mx-auto py-10 px-4 space-y-6 animate-fade-in-up">
+    <main className="student-assistant student-assistant-page max-w-6xl mx-auto py-10 px-4 space-y-6 animate-fade-in-up">
       <div className="student-hero rounded-2xl p-6">
         <h1 className="text-3xl font-bold mb-2">
           AI Student Research Copilot
@@ -463,6 +460,5 @@ export default function StudentAssistant() {
         )}
       </section>
     </main>
-    </>
   );
 }
