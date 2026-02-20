@@ -29,8 +29,8 @@ EMBEDDING_URL = (
     "sentence-transformers/all-MiniLM-L6-v2/pipeline/feature-extraction"
 )
 FREE_MODELS = [
-    "mistralai/Mistral-7B-Instruct-v0.2",
     "google/flan-t5-large",
+    "mistralai/Mistral-7B-Instruct-v0.2",
     "microsoft/phi-2",
 ]
 
@@ -58,6 +58,13 @@ def _hf_headers() -> dict:
     if token:
         return {"Authorization": f"Bearer {token}"}
     return {}
+
+
+def _hf_text_models() -> list[str]:
+    raw = os.getenv("HF_TEXT_MODELS", "").strip()
+    if not raw:
+        return FREE_MODELS
+    return [item.strip() for item in raw.split(",") if item.strip()]
 
 
 def _clean_text(text: str) -> str:
@@ -229,27 +236,34 @@ async def _generate_text(prompt: str, max_new_tokens: int) -> str:
 
     errors: list[str] = []
     async with httpx.AsyncClient(timeout=90) as client:
-        for model in FREE_MODELS:
-            url = f"https://router.huggingface.co/hf-inference/models/{model}"
-            try:
-                response = await client.post(url, headers=headers, json=payload)
-            except httpx.HTTPError as exc:
-                errors.append(f"{model}: {exc}")
-                continue
+        for model in _hf_text_models():
+            endpoints = [
+                f"https://router.huggingface.co/hf-inference/models/{model}",
+                f"https://api-inference.huggingface.co/models/{model}",
+            ]
+            for url in endpoints:
+                try:
+                    response = await client.post(url, headers=headers, json=payload)
+                except httpx.HTTPError as exc:
+                    errors.append(f"{model}: {exc}")
+                    continue
 
-            if response.status_code != 200:
-                errors.append(f"{model}: status {response.status_code}")
-                continue
+                if response.status_code != 200:
+                    detail = response.text.strip()
+                    if len(detail) > 140:
+                        detail = detail[:140] + "..."
+                    errors.append(f"{model}: status {response.status_code} ({detail})")
+                    continue
 
-            data = response.json()
-            if isinstance(data, list) and data and isinstance(data[0], dict):
-                if "generated_text" in data[0]:
-                    return str(data[0]["generated_text"]).strip()
-            if isinstance(data, dict) and "generated_text" in data:
-                return str(data["generated_text"]).strip()
-            if isinstance(data, str):
-                return data.strip()
-            errors.append(f"{model}: unexpected response shape")
+                data = response.json()
+                if isinstance(data, list) and data and isinstance(data[0], dict):
+                    if "generated_text" in data[0]:
+                        return str(data[0]["generated_text"]).strip()
+                if isinstance(data, dict) and "generated_text" in data:
+                    return str(data["generated_text"]).strip()
+                if isinstance(data, str):
+                    return data.strip()
+                errors.append(f"{model}: unexpected response shape")
 
     raise HTTPException(
         status_code=502,
