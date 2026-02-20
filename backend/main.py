@@ -76,19 +76,14 @@ async def health():
     return {"status": "ok"}
 
 
-# ── Debug OCR endpoint (to diagnose credential issues) ────────────────────────
+# ── Debug OCR endpoint ───────────────────────────────────────────────────────
 @app.get("/debug/ocr")
 async def debug_ocr():
-    """
-    Returns diagnostic info about OCR setup.
-    """
-    from services.ocr import OCR_AVAILABLE
-    
+    """Returns diagnostic info about OCR setup."""
     return {
-        "ocr_method": "PaddleOCR (free, fully local, no API calls)",
-        "ocr_available": OCR_AVAILABLE,
-        "api_status": "Available" if OCR_AVAILABLE else "Not initialized",
-        "note": "Local OCR processing - no billing, no API calls, no rate limits",
+        "ocr_method": "OCR.space API (free, no auth required)",
+        "status": "Configured",
+        "note": "Free tier API - ensure image is small (<1MB) and clear text",
     }
 
 

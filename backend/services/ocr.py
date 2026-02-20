@@ -1,40 +1,18 @@
 """
 RealityCheck AI — OCR Service
-Extracts text from uploaded images using PaddleOCR (free, no API/auth required).
-Falls back gracefully if OCR fails.
+Extracts text from uploaded images using OCR.space API (free, no auth required).
 """
 
-import os
+import httpx
 from PIL import Image
 from io import BytesIO
 from fastapi import UploadFile, HTTPException
 
-# Try to import PaddleOCR
-try:
-    from paddleocr import PaddleOCR
-    OCR_AVAILABLE = True
-    # Initialize OCR on first import (lazy load on first use)
-    _ocr_engine = None
-except ImportError:
-    OCR_AVAILABLE = False
-    _ocr_engine = None
-    print("⚠️  PaddleOCR not installed")
-
-
-def get_ocr_engine():
-    """Lazy load OCR engine on first use."""
-    global _ocr_engine
-    if _ocr_engine is None and OCR_AVAILABLE:
-        print("ℹ️  Initializing PaddleOCR engine...")
-        _ocr_engine = PaddleOCR(use_angle_cls=True, lang='en', use_gpu=False)
-    return _ocr_engine
-
 
 async def extract_text_from_image(file: UploadFile) -> str | None:
     """
-    Extract text from image using PaddleOCR (free, fully local, no API calls).
+    Extract text from image using OCR.space API (free, no authentication).
     Returns None if OCR fails.
-    Raises HTTPException for invalid image types.
     """
     allowed_types = {"image/png", "image/jpeg", "image/jpg", "image/webp", "image/bmp"}
     if file.content_type not in allowed_types:
@@ -44,14 +22,10 @@ async def extract_text_from_image(file: UploadFile) -> str | None:
                    f"Allowed: {', '.join(allowed_types)}",
         )
 
-    if not OCR_AVAILABLE:
-        print("⚠️  OCR skipped: PaddleOCR not installed.")
-        return None
-
     try:
         contents = await file.read()
         
-        # Validate image with PIL
+        # Validate image
         try:
             image = Image.open(BytesIO(contents))
             image.verify()
@@ -60,49 +34,50 @@ async def extract_text_from_image(file: UploadFile) -> str | None:
             print(f"⚠️  Invalid image file: {e}")
             return None
 
-        # Save image temporarily for PaddleOCR
-        import tempfile
-        with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as tmp:
-            tmp.write(contents)
-            tmp_path = tmp.name
-
-        try:
-            # Initialize OCR engine if needed
-            ocr = get_ocr_engine()
-            if ocr is None:
-                print("⚠️  Failed to initialize PaddleOCR")
-                return None
-
-            # Run OCR
-            print("ℹ️  Running PaddleOCR...")
-            result = ocr.ocr(tmp_path, cls=True)
+        # Call OCR.space API
+        print("ℹ️  Sending image to OCR.space API...")
+        
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            files = {"filename": ("image", contents, file.content_type)}
+            data = {
+                "apikey": "K87899142C87",
+                "isOverlayRequired": "false",
+                "language": "eng",
+            }
             
-            # Extract text from results
-            extracted_text = ""
-            if result:
-                for line in result:
-                    if line:
-                        for word_info in line:
-                            text = word_info[1][0]  # word text
-                            extracted_text += text + " "
-            
-            extracted_text = extracted_text.strip()
-            
-            if extracted_text:
-                print(f"✅ OCR successful! Extracted {len(extracted_text)} characters")
-                return extracted_text
-            else:
-                print("⚠️  No text detected in image")
-                return None
+            response = await client.post(
+                "https://api.ocr.space/parse/image",
+                files=files,
+                data=data,
+            )
+        
+        print(f"ℹ️  OCR.space response status: {response.status_code}")
+        
+        if response.status_code != 200:
+            print(f"⚠️  OCR.space API error: {response.status_code}")
+            print(f"Response: {response.text[:200]}")
+            return None
+        
+        result = response.json()
+        print(f"ℹ️  Response: {result}")
+        
+        if result.get("IsErroredOnProcessing"):
+            error_msg = result.get("ErrorMessage", "Unknown error")
+            print(f"⚠️  OCR error: {error_msg}")
+            return None
+        
+        parsed_text = result.get("ParsedText", "").strip()
+        
+        if parsed_text:
+            print(f"✅ OCR successful! Extracted {len(parsed_text)} characters")
+            return parsed_text
+        else:
+            print("⚠️  No text detected in image")
+            return None
 
-        finally:
-            # Clean up temp file
-            import os as os_module
-            try:
-                os_module.unlink(tmp_path)
-            except:
-                pass
-
+    except httpx.TimeoutException:
+        print("⚠️  OCR.space API timeout")
+        return None
     except Exception as exc:
-        print(f"❌ Unexpected error in OCR: {type(exc).__name__}: {str(exc)}")
+        print(f"❌ Error in OCR: {type(exc).__name__}: {str(exc)}")
         return None
