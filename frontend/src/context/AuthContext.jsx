@@ -9,23 +9,20 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Handle OAuth callback in URL (from Supabase redirect)
+    supabase.auth.onAuthStateChange(async (_event, s) => {
+      // This handles OAuth redirect automatically
+      setSession(s);
+      setUser(s?.user ?? null);
+      setLoading(false);
+    });
+
     // Get initial session
     supabase.auth.getSession().then(({ data: { session: s } }) => {
       setSession(s);
       setUser(s?.user ?? null);
       setLoading(false);
     });
-
-    // Listen for auth changes (login, logout, token refresh, OAuth redirect)
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, s) => {
-        setSession(s);
-        setUser(s?.user ?? null);
-        setLoading(false);
-      }
-    );
-
-    return () => subscription.unsubscribe();
   }, []);
 
   const login = useCallback((s) => {

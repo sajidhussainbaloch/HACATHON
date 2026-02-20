@@ -98,7 +98,7 @@ export async function apiGoogleAuth() {
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: 'google',
     options: {
-      redirectTo: window.location.origin,
+      redirectTo: `${window.location.origin}/app`,
     },
   });
   if (error) throw new Error(error.message);
