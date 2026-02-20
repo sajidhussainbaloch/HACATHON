@@ -71,6 +71,46 @@ export async function healthCheck() {
   return resp.json();
 }
 
+export async function uploadStudentNotes(file) {
+  if (!file) throw new Error('Please select a file to upload.');
+  const formData = new FormData();
+  formData.append('file', file);
+
+  const resp = await fetch(`${API_BASE}/student/upload`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: formData,
+  });
+
+  return parseResponse(resp, 'Notes upload failed');
+}
+
+export async function askStudentQuestion(question) {
+  const resp = await fetch(`${API_BASE}/student/ask`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...getAuthHeaders(),
+    },
+    body: JSON.stringify({ question }),
+  });
+
+  return parseResponse(resp, 'Question answering failed');
+}
+
+export async function generateStudyTool(mode) {
+  const resp = await fetch(`${API_BASE}/student/generate`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...getAuthHeaders(),
+    },
+    body: JSON.stringify({ mode }),
+  });
+
+  return parseResponse(resp, 'Study tool generation failed');
+}
+
 // ── Supabase Auth helpers (used by pages) ────────────────────────────────────
 
 export async function apiSignup({ full_name, email, password }) {

@@ -41,6 +41,10 @@ export default function Navbar({ darkMode, toggleDarkMode }) {
                   style={{ color: 'var(--text-secondary)' }}>
               Analyzer
             </Link>
+            <Link to="/student-assistant" className="text-sm font-medium hover:text-indigo-500 transition-colors"
+                  style={{ color: 'var(--text-secondary)' }}>
+              Student Assistant
+            </Link>
             <Link to="/profile" className="flex items-center gap-2 no-underline">
               <div className="w-8 h-8 rounded-full bg-indigo-500 flex items-center justify-center text-white text-sm font-bold">
                 {user?.full_name?.charAt(0)?.toUpperCase() || '?'}

@@ -17,6 +17,7 @@ from services.ocr import extract_text_from_image
 from services.classifier import classify_news
 from services.rag import build_index, retrieve_similar
 from services.explanation import generate_explanation
+from student_routes import router as student_router
 from utils.config import MAX_INPUT_CHARS
 
 from database import init_db
@@ -68,6 +69,8 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+app.include_router(student_router)
 
 
 # ── Health check ──────────────────────────────────────────────────────────────

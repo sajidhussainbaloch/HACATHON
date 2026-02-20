@@ -16,6 +16,7 @@ import ResetPassword from './pages/ResetPassword';
 import Profile from './pages/Profile';
 import About from './pages/About';
 import PrivacyPolicy from './pages/PrivacyPolicy';
+import StudentAssistant from './student-assistant/StudentAssistant';
 
 function AnalyzerPage() {
   const [loading, setLoading] = useState(false);
@@ -149,6 +150,7 @@ export default function App() {
           <Route path="/about" element={<About />} />
           <Route path="/privacy-policy" element={<PrivacyPolicy />} />
           <Route path="/app" element={<AnalyzerPage />} />
+          <Route path="/student-assistant" element={<StudentAssistant />} />
           <Route path="/profile" element={
             <ProtectedRoute>
               <Profile />
