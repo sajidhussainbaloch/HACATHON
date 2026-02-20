@@ -56,7 +56,7 @@ export default function CursorDots() {
         radius: 1.5 + Math.random() * 2.5,
         baseOpacity: 0.3 + Math.random() * 0.5,
         pulseOffset: Math.random() * Math.PI * 2,
-        repelDistance: 180 + Math.random() * 80,
+        repelDistance: 270 + Math.random() * 120,
       };
     });
 
@@ -111,64 +111,84 @@ export default function CursorDots() {
         particle.x += particle.vx;
         particle.y += particle.vy;
 
-        // Calculate pulsing opacity (shiny glowing effect)
+        // Calculate pulsing opacity (dark to bright star twinkling effect)
         const pulse = Math.sin(
-          animationTimeRef.current * 1.2 + particle.pulseOffset
+          animationTimeRef.current * 1.5 + particle.pulseOffset
         ) * 0.5 + 0.5;
-        const finalOpacity = particle.baseOpacity * (0.4 + pulse * 0.6);
+        const finalOpacity = particle.baseOpacity * (0.1 + pulse * 0.9); // Dark (0.1) to bright (1.0)
 
-        // Draw shiny dot with glowing effect
+        // Draw star-like dot with dark-to-bright shining effect
         ctx.save();
         ctx.globalAlpha = finalOpacity;
 
-        // Large glow (light to dark gradient)
+        // Very large outer glow (dark blue)
         const outerGlow = ctx.createRadialGradient(
           particle.x,
           particle.y,
           0,
           particle.x,
           particle.y,
-          particle.radius * 4
+          particle.radius * 5
         );
-        outerGlow.addColorStop(0, 'rgba(6, 182, 212, 0.4)');
-        outerGlow.addColorStop(0.5, 'rgba(6, 182, 212, 0.1)');
+        outerGlow.addColorStop(0, 'rgba(6, 182, 212, 0.2)');
+        outerGlow.addColorStop(0.3, 'rgba(6, 182, 212, 0.08)');
         outerGlow.addColorStop(1, 'rgba(6, 182, 212, 0)');
         ctx.fillStyle = outerGlow;
         ctx.beginPath();
-        ctx.arc(particle.x, particle.y, particle.radius * 4, 0, Math.PI * 2);
+        ctx.arc(particle.x, particle.y, particle.radius * 5, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Large glow (brighter)
+        const largeGlow = ctx.createRadialGradient(
+          particle.x,
+          particle.y,
+          0,
+          particle.x,
+          particle.y,
+          particle.radius * 3.5
+        );
+        largeGlow.addColorStop(0, 'rgba(6, 182, 212, 0.35)');
+        largeGlow.addColorStop(0.5, 'rgba(6, 182, 212, 0.15)');
+        largeGlow.addColorStop(1, 'rgba(6, 182, 212, 0)');
+        ctx.fillStyle = largeGlow;
+        ctx.beginPath();
+        ctx.arc(particle.x, particle.y, particle.radius * 3.5, 0, Math.PI * 2);
         ctx.fill();
 
         // Medium glow
-        const midGlow = ctx.createRadialGradient(
+        const mediumGlow = ctx.createRadialGradient(
           particle.x,
           particle.y,
           0,
           particle.x,
           particle.y,
-          particle.radius * 2.5
+          particle.radius * 2
         );
-        midGlow.addColorStop(0, 'rgba(6, 182, 212, 0.6)');
-        midGlow.addColorStop(1, 'rgba(6, 182, 212, 0)');
-        ctx.fillStyle = midGlow;
+        mediumGlow.addColorStop(0, 'rgba(6, 182, 212, 0.5)');
+        mediumGlow.addColorStop(1, 'rgba(6, 182, 212, 0)');
+        ctx.fillStyle = mediumGlow;
         ctx.beginPath();
-        ctx.arc(particle.x, particle.y, particle.radius * 2.5, 0, Math.PI * 2);
+        ctx.arc(particle.x, particle.y, particle.radius * 2, 0, Math.PI * 2);
         ctx.fill();
 
-        // Shiny core (bright center)
+        // Star core - white bright center that pulses
         const coreGradient = ctx.createRadialGradient(
-          particle.x - particle.radius * 0.3,
-          particle.y - particle.radius * 0.3,
+          particle.x - particle.radius * 0.4,
+          particle.y - particle.radius * 0.4,
           0,
           particle.x,
           particle.y,
-          particle.radius
+          particle.radius * 1.2
         );
-        coreGradient.addColorStop(0, `rgba(255, 255, 255, ${0.8 * finalOpacity})`);
-        coreGradient.addColorStop(0.5, `rgba(6, 182, 212, ${finalOpacity})`);
-        coreGradient.addColorStop(1, `rgba(6, 182, 212, ${0.3 * finalOpacity})`);
+        // Dark to bright pulsing effect
+        const brightFactor = 0.3 + pulse * 0.7; // 0.3 to 1.0
+        coreGradient.addColorStop(0, `rgba(255, 255, 255, ${0.9 * brightFactor})`);
+        coreGradient.addColorStop(0.3, `rgba(150, 220, 255, ${0.7 * brightFactor})`);
+        coreGradient.addColorStop(0.6, `rgba(6, 182, 212, ${0.5 * brightFactor})`);
+        coreGradient.addColorStop(1, `rgba(6, 182, 212, ${0.1 * brightFactor})`);
         ctx.fillStyle = coreGradient;
         ctx.beginPath();
-        ctx.arc(particle.x, particle.y, particle.radius, 0, Math.PI * 2);
+        ctx.arc(particle.x, particle.y, particle.radius * 1.2, 0, Math.PI * 2);
         ctx.fill();
 
         ctx.restore();
