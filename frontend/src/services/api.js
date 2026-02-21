@@ -153,11 +153,37 @@ export async function apiResetPassword({ new_password }) {
 }
 
 export async function apiUpdateProfile({ full_name }) {
+  const updates = {};
+  if (full_name) updates.full_name = full_name;
+  if (arguments[0]?.avatar_url) updates.avatar_url = arguments[0].avatar_url;
+  if (arguments[0]?.bio) updates.bio = arguments[0].bio;
+
   const { data, error } = await supabase.auth.updateUser({
-    data: { full_name },
+    data: updates,
   });
   if (error) throw new Error(error.message);
   return data;
+}
+
+export async function uploadAvatar(file, userId) {
+  if (!file) throw new Error('No file provided');
+  const path = `avatars/${userId}/${Date.now()}_${file.name}`;
+  const { data, error } = await supabase.storage.from('avatars').upload(path, file, { cacheControl: '3600', upsert: false });
+  if (error) throw new Error(error.message);
+  const url = supabase.storage.from('avatars').getPublicUrl(path).publicUrl;
+  return url;
+}
+
+export async function requestOtp(email) {
+  const resp = await fetch(`${API_BASE}/auth/request-otp`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email })
+  });
+  return parseResponse(resp, 'Failed to request OTP');
+}
+
+export async function verifyOtp({ email, otp }) {
+  const resp = await fetch(`${API_BASE}/auth/verify-otp`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, otp }) });
+  return parseResponse(resp, 'OTP verification failed');
 }
 
 // OTP verification is NOT needed — Supabase handles email verification automatically.

@@ -115,12 +115,12 @@ export default function ImageGenerator() {
         {!isTouch && (
           <div className="mt-8 space-y-6">
             {/* Image Preview - Top Section */}
-            <div className="rounded-2xl border border-white/10 bg-white/5 p-4 min-h-[280px] flex items-center justify-center">
+            <div className="rounded-2xl border border-white/10 bg-white/5 p-4 min-h-70 flex items-center justify-center">
               {imageSrc ? (
                 <img
                   src={imageSrc}
                   alt="Generated"
-                  className="w-full max-h-[400px] object-contain rounded-xl"
+                  className="w-full max-h-100 object-contain rounded-xl"
                 />
               ) : (
                 <div className="flex items-center justify-center text-sm text-indigo-200">
@@ -220,7 +220,7 @@ export default function ImageGenerator() {
               <button
                 onClick={handleGenerate}
                 disabled={!prompt.trim() || loading}
-                className="w-full rounded-xl px-5 py-3 text-sm font-semibold text-white bg-gradient-to-r from-indigo-500 to-purple-600 hover:shadow-xl hover:shadow-indigo-500/30 transition-all disabled:opacity-40"
+                className="w-full rounded-xl px-5 py-3 text-sm font-semibold text-white bg-linear-to-r from-indigo-500 to-purple-600 hover:shadow-xl hover:shadow-indigo-500/30 transition-all disabled:opacity-40"
               >
                 {loading ? 'Generating image...' : 'Generate image'}
               </button>

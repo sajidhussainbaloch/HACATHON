@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { apiUpdateProfile } from '../services/api';
+import { apiUpdateProfile, uploadAvatar } from '../services/api';
 
 export default function Profile() {
   const { user, logout } = useAuth();
@@ -11,13 +11,20 @@ export default function Profile() {
   const [success, setSuccess] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [bio, setBio] = useState(user?.bio || '');
+  const [avatarFile, setAvatarFile] = useState(null);
+  const [avatarPreview, setAvatarPreview] = useState(user?.avatar_url || '');
 
   const handleSave = async () => {
     setError('');
     setSuccess('');
     setLoading(true);
     try {
-      await apiUpdateProfile({ full_name: fullName });
+      let avatar_url = avatarPreview;
+      if (avatarFile) {
+        avatar_url = await uploadAvatar(avatarFile, user.id);
+      }
+      await apiUpdateProfile({ full_name: fullName, avatar_url, bio });
       setSuccess('Profile updated successfully.');
       setEditing(false);
     } catch (err) {
@@ -41,8 +48,12 @@ export default function Profile() {
 
         {/* Avatar and header */}
         <div className="flex items-center gap-4 mb-8">
-          <div className="w-16 h-16 rounded-full bg-indigo-500 flex items-center justify-center text-white text-2xl font-bold">
-            {user.full_name?.charAt(0)?.toUpperCase() || '?'}
+          <div className="w-16 h-16 rounded-full overflow-hidden bg-gray-200 flex items-center justify-center text-white text-2xl font-bold">
+            {avatarPreview ? (
+              <img src={avatarPreview} alt="avatar" className="w-full h-full object-cover" />
+            ) : (
+              (user.full_name?.charAt(0)?.toUpperCase() || '?')
+            )}
           </div>
           <div>
             <h1 className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>
@@ -65,6 +76,22 @@ export default function Profile() {
 
         {/* Profile info */}
         <div className="space-y-4">
+          <div className="p-4 rounded-lg" style={{ backgroundColor: 'var(--bg-primary)' }}>
+            <p className="text-xs font-medium uppercase tracking-wide" style={{ color: 'var(--text-secondary)' }}>
+              Avatar
+            </p>
+            <div className="mt-2 flex items-center gap-3">
+              <input type="file" accept="image/*" onChange={(e)=>{ const f = e.target.files?.[0]; setAvatarFile(f); if (f) setAvatarPreview(URL.createObjectURL(f)); }} />
+              <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>Upload a square avatar (max 2MB). Uses Supabase Storage bucket `avatars`.</p>
+            </div>
+          </div>
+
+          <div className="p-4 rounded-lg" style={{ backgroundColor: 'var(--bg-primary)' }}>
+            <p className="text-xs font-medium uppercase tracking-wide" style={{ color: 'var(--text-secondary)' }}>
+              Bio
+            </p>
+            <textarea rows={3} value={bio} onChange={(e)=>setBio(e.target.value)} className="mt-1 w-full px-3 py-2 rounded-lg border focus:outline-none focus:border-indigo-500 text-sm" style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)', color: 'var(--text-primary)' }} />
+          </div>
           <div className="flex items-center justify-between p-4 rounded-lg"
                style={{ backgroundColor: 'var(--bg-primary)' }}>
             <div>
