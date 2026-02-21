@@ -16,7 +16,8 @@ from pydantic import BaseModel
 router = APIRouter(prefix="/api/image", tags=["image-generator"])
 
 HF_API_KEY = os.getenv("HF_API_KEY")
-HF_API_URL = "https://api-inference.huggingface.co/models"
+# Prefer the new router endpoint; keep configurable for testing
+HF_API_URL = os.getenv("HF_ROUTER_URL", "https://router.huggingface.co/models")
 
 # Available free models on Hugging Face
 HF_MODELS = {
@@ -90,19 +91,82 @@ async def generate_image(payload: GenerateRequest):
                     detail=f"HuggingFace API error: {error_detail}"
                 )
 
-            # HF returns raw image bytes
-            image_bytes = response.content
-            
-            # Encode to base64
-            image_base64 = base64.b64encode(image_bytes).decode("utf-8")
+            # Try to handle multiple response shapes from the HF router:
+            content_type = response.headers.get("content-type", "")
 
-            return {
-                "image_base64": image_base64,
-                "content_type": "image/png",
-                "model": model_key,
-                "width": payload.width or 768,
-                "height": payload.height or 768,
-            }
+            # If the router returns raw image bytes (content-type image/*)
+            if content_type.startswith("image/"):
+                image_bytes = response.content
+                image_base64 = base64.b64encode(image_bytes).decode("utf-8")
+                return {
+                    "image_base64": image_base64,
+                    "content_type": content_type.split(";")[0],
+                    "model": model_key,
+                    "width": payload.width or 768,
+                    "height": payload.height or 768,
+                }
+
+            # Otherwise attempt to parse JSON and locate base64-encoded image data
+            try:
+                data = response.json()
+            except Exception:
+                raise HTTPException(status_code=502, detail="Unexpected non-image, non-json response from HuggingFace router")
+
+            # Recursive search for base64 strings in JSON
+            def find_base64(obj):
+                if isinstance(obj, str):
+                    s = obj.strip()
+                    # quick length check to avoid decoding short tokens
+                    if len(s) > 200:
+                        try:
+                            # validate base64
+                            base64.b64decode(s, validate=True)
+                            return s
+                        except Exception:
+                            return None
+                    return None
+                if isinstance(obj, dict):
+                    # common artifact fields
+                    for k in ("image", "image_base64", "generated_image", "b64_json", "base64", "data", "blob"):
+                        if k in obj and isinstance(obj[k], str):
+                            candidate = find_base64(obj[k])
+                            if candidate:
+                                return candidate
+                    for v in obj.values():
+                        candidate = find_base64(v)
+                        if candidate:
+                            return candidate
+                if isinstance(obj, list):
+                    for item in obj:
+                        candidate = find_base64(item)
+                        if candidate:
+                            return candidate
+                return None
+
+            b64 = find_base64(data)
+            if b64:
+                # If we found base64 content, return it. Content-type may be in the JSON.
+                # Try to find mime type in response JSON
+                mime = None
+                if isinstance(data, dict):
+                    mime = data.get("mime") or data.get("content_type") or data.get("content-type")
+                    # check nested artifacts
+                    artifacts = data.get("artifacts") or data.get("outputs")
+                    if isinstance(artifacts, list) and artifacts:
+                        first = artifacts[0]
+                        if isinstance(first, dict):
+                            mime = mime or first.get("mime") or first.get("content_type")
+
+                return {
+                    "image_base64": b64,
+                    "content_type": mime or "image/png",
+                    "model": model_key,
+                    "width": payload.width or 768,
+                    "height": payload.height or 768,
+                }
+
+            # If we reach here no usable image data was found
+            raise HTTPException(status_code=502, detail=f"No image data found in Hugging Face router response: {str(data)[:300]}")
 
     except HTTPException:
         raise

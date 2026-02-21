@@ -66,6 +66,7 @@ Use this checklist to collect all required values before deploying.
 - Click "New token" → Select "Read" access → Copy the token
 - Set `HF_API_KEY` in Vercel environment variables
 - No billing required - uses free inference API with rate limits
+- Optional: `HF_ROUTER_URL` — override the Hugging Face router base URL (defaults to https://router.huggingface.co/models)
 
 ---
 
