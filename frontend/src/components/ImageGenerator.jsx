@@ -218,15 +218,15 @@ export default function ImageGenerator() {
               )}
             </div>
 
-            <div className="rounded-2xl border border-white/10 bg-white/5 p-4 min-h-[260px]">
+            <div className="rounded-2xl border border-white/10 bg-white/5 p-4 min-h-[260px] flex items-center justify-center">
               {imageSrc ? (
                 <img
                   src={imageSrc}
                   alt="Generated"
-                  className="w-full h-64 object-cover rounded-xl"
+                  className="w-full max-h-[500px] object-contain rounded-xl"
                 />
               ) : (
-                <div className="h-full flex items-center justify-center text-sm text-indigo-200">
+                <div className="flex items-center justify-center text-sm text-indigo-200">
                   Your generated image will appear here.
                 </div>
               )}
