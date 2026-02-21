@@ -85,7 +85,7 @@ function HomePage() {
           </div>
           <div className="typewriter mb-4">
             <span className="typewriter-text text-3xl sm:text-5xl font-black tracking-tight hero-title-shadow">
-              Zayqen AI
+              Reality Check AI
             </span>
             <span className="typewriter-cursor" aria-hidden="true"></span>
           </div>

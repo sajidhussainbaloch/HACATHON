@@ -115,7 +115,23 @@ export default function ImageGenerator() {
         )}
 
         {!isTouch && (
-          <div className="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="mt-8 space-y-6">
+            {/* Image Preview - Top Section */}
+            <div className="rounded-2xl border border-white/10 bg-white/5 p-4 min-h-[280px] flex items-center justify-center">
+              {imageSrc ? (
+                <img
+                  src={imageSrc}
+                  alt="Generated"
+                  className="w-full max-h-[400px] object-contain rounded-xl"
+                />
+              ) : (
+                <div className="flex items-center justify-center text-sm text-indigo-200">
+                  Your generated image will appear here.
+                </div>
+              )}
+            </div>
+
+            {/* Form Controls - Bottom Section */}
             <div className="space-y-4">
               <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
                 <label className="block text-xs uppercase tracking-wider mb-2" style={{ color: 'var(--text-secondary)' }}>
@@ -214,20 +230,6 @@ export default function ImageGenerator() {
               {error && (
                 <div className="rounded-xl border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm text-red-300">
                   {error}
-                </div>
-              )}
-            </div>
-
-            <div className="rounded-2xl border border-white/10 bg-white/5 p-4 min-h-[260px] flex items-center justify-center">
-              {imageSrc ? (
-                <img
-                  src={imageSrc}
-                  alt="Generated"
-                  className="w-full max-h-[500px] object-contain rounded-xl"
-                />
-              ) : (
-                <div className="flex items-center justify-center text-sm text-indigo-200">
-                  Your generated image will appear here.
                 </div>
               )}
             </div>
