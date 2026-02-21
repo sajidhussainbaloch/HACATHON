@@ -49,7 +49,7 @@ export default function Login() {
             Welcome Back
           </h1>
           <p className="text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>
-            Log in to Reality Check AI
+            Log in to Reality Check AI Plus
           </p>
         </div>
 

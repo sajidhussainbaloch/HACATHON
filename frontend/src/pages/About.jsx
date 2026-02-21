@@ -13,7 +13,7 @@ export default function About() {
             ✓
           </div>
           <h1 className="text-3xl font-bold" style={{ color: 'var(--text-primary)' }}>
-            About Reality Check AI
+            About Reality Check AI Plus
           </h1>
           <p className="text-lg mt-2" style={{ color: 'var(--text-secondary)' }}>
             AI-Powered Fake News & Misinformation Detection
@@ -24,7 +24,7 @@ export default function About() {
         <section className="mb-8">
           <h2 className="text-xl font-bold mb-3" style={{ color: 'var(--text-primary)' }}>Our Mission</h2>
           <p className="leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
-            Reality Check AI is a professional-grade authenticity platform designed to reduce misinformation,
+            Reality Check AI Plus is a professional-grade authenticity platform designed to reduce misinformation,
             accelerate verification workflows, and provide explainable AI signals at scale. We combine
             retrieval-augmented generation, calibrated classifiers, and forensic signals to deliver high-trust
             media insights in seconds.
@@ -124,7 +124,7 @@ export default function About() {
         <section className="mb-6">
           <h2 className="text-xl font-bold mb-3" style={{ color: 'var(--text-primary)' }}>Disclaimer</h2>
           <p className="text-sm leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
-            Reality Check AI provides AI-generated assessments and should be used as a supplementary tool.
+            Reality Check AI Plus provides AI-generated assessments and should be used as a supplementary tool.
             Results are based on pattern recognition and comparison with known information — they are not
             definitive truth judgments. Always cross-reference important information with multiple trusted
             sources. We are not responsible for decisions made based on the AI's analysis.

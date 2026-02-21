@@ -1,5 +1,5 @@
 /**
- * Reality Check AI — Supabase Client
+ * Reality Check AI Plus — Supabase Client
  * Handles all authentication via Supabase Auth (HTTPS, no direct DB needed).
  */
 import { createClient } from '@supabase/supabase-js';

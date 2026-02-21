@@ -85,7 +85,7 @@ function HomePage() {
           </div>
           <div className="typewriter mb-4">
             <span className="typewriter-text text-3xl sm:text-5xl font-black tracking-tight hero-title-shadow">
-              Reality Check AI
+              Reality Check AI Plus
             </span>
             <span className="typewriter-cursor" aria-hidden="true"></span>
           </div>
@@ -214,7 +214,7 @@ export default function App() {
                 ))}
               </div>
               <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
-                Reality Check AI · Built for truth · {new Date().getFullYear()}
+                Reality Check AI Plus · Built for truth · {new Date().getFullYear()}
               </p>
             </div>
           </div>

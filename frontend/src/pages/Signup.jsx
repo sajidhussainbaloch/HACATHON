@@ -66,7 +66,7 @@ export default function Signup() {
             Create Account
           </h1>
           <p className="text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>
-            Join Reality Check AI
+            Join Reality Check AI Plus
           </p>
         </div>
 

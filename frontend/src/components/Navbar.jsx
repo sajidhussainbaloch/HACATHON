@@ -37,7 +37,7 @@ export default function Navbar({ darkMode, toggleDarkMode }) {
           </div>
           <div className="hidden sm:block">
             <span className="text-lg font-bold tracking-tight bg-gradient-to-r from-indigo-500 to-purple-600 bg-clip-text text-transparent">
-              Reality Check AI
+              Reality Check AI Plus
             </span>
             <span className="text-xs block text-indigo-400 font-medium">Trust Signal Engine</span>
           </div>

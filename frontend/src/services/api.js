@@ -1,5 +1,5 @@
 /**
- * Reality Check AI — API service
+ * Reality Check AI Plus — API service
  * Communicates with the FastAPI backend for analysis.
  * Auth is handled directly by Supabase (see supabase.js + AuthContext).
  */
