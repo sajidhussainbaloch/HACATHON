@@ -13,7 +13,7 @@ export default function About() {
             ✓
           </div>
           <h1 className="text-3xl font-bold" style={{ color: 'var(--text-primary)' }}>
-            About Zayqen AI
+            About Reality Check AI
           </h1>
           <p className="text-lg mt-2" style={{ color: 'var(--text-secondary)' }}>
             AI-Powered Fake News & Misinformation Detection
