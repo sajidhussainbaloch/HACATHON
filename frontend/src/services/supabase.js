@@ -1,5 +1,5 @@
 /**
- * Zayqen AI — Supabase Client
+ * Reality Check AI — Supabase Client
  * Handles all authentication via Supabase Auth (HTTPS, no direct DB needed).
  */
 import { createClient } from '@supabase/supabase-js';

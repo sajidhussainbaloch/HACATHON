@@ -214,7 +214,7 @@ export default function App() {
                 ))}
               </div>
               <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
-                Zayqen AI · Built for truth · {new Date().getFullYear()}
+                Reality Check AI · Built for truth · {new Date().getFullYear()}
               </p>
             </div>
           </div>

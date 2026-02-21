@@ -89,7 +89,7 @@ export default function ImageGenerator() {
     if (!imageSrc) return;
     const link = document.createElement('a');
     link.href = imageSrc;
-    link.download = 'zayqen-ai-image.png';
+    link.download = 'reality-check-ai-image.png';
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);

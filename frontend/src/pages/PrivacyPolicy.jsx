@@ -18,7 +18,7 @@ export default function PrivacyPolicy() {
 
           <section>
             <h2 className="text-lg font-bold mb-2" style={{ color: 'var(--text-primary)' }}>1. Information We Collect</h2>
-            <p>When you use Zayqen AI, we may collect the following information:</p>
+            <p>When you use Reality Check AI, we may collect the following information:</p>
             <ul className="list-disc ml-6 mt-2 space-y-1">
               <li><strong style={{ color: 'var(--text-primary)' }}>Account Information:</strong> Full name, email address, and encrypted password when you create an account.</li>
               <li><strong style={{ color: 'var(--text-primary)' }}>Content Data:</strong> Text or images you submit for analysis. This data is processed by our AI models and is not permanently stored.</li>
@@ -29,7 +29,7 @@ export default function PrivacyPolicy() {
           <section>
             <h2 className="text-lg font-bold mb-2" style={{ color: 'var(--text-primary)' }}>2. How We Use Your Information</h2>
             <ul className="list-disc ml-6 space-y-1">
-              <li>To provide and maintain the Zayqen AI service</li>
+              <li>To provide and maintain the Reality Check AI service</li>
               <li>To authenticate your account and protect against unauthorized access</li>
               <li>To send verification emails (OTP codes) and password reset links</li>
               <li>To process and analyze submitted content for misinformation detection</li>
@@ -52,7 +52,7 @@ export default function PrivacyPolicy() {
 
           <section>
             <h2 className="text-lg font-bold mb-2" style={{ color: 'var(--text-primary)' }}>4. Third-Party Services</h2>
-            <p>Zayqen AI uses the following third-party services to operate:</p>
+            <p>Reality Check AI uses the following third-party services to operate:</p>
             <ul className="list-disc ml-6 mt-2 space-y-1">
               <li><strong style={{ color: 'var(--text-primary)' }}>Cloudflare Workers AI:</strong> For LLM-based content classification and explanation generation</li>
               <li><strong style={{ color: 'var(--text-primary)' }}>HuggingFace:</strong> For generating text embeddings used in evidence retrieval</li>
@@ -88,7 +88,7 @@ export default function PrivacyPolicy() {
           <section>
             <h2 className="text-lg font-bold mb-2" style={{ color: 'var(--text-primary)' }}>7. Cookies & Local Storage</h2>
             <p>
-              Zayqen AI uses browser local storage to maintain your authentication session (JWT token)
+              Reality Check AI uses browser local storage to maintain your authentication session (JWT token)
               and theme preference (dark/light mode). No third-party tracking cookies are used.
             </p>
           </section>

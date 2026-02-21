@@ -1,5 +1,5 @@
 /**
- * Zayqen AI — PDF Report Generator
+ * Reality Check AI — PDF Report Generator
  * Uses jsPDF to create a downloadable analysis report.
  */
 import jsPDF from 'jspdf';
@@ -24,7 +24,7 @@ export function downloadPdfReport(data) {
   };
 
   // Title
-  addLine('Zayqen AI — Analysis Report', { fontSize: 18, bold: true, color: [99, 102, 241] });
+  addLine('Reality Check AI — Analysis Report', { fontSize: 18, bold: true, color: [99, 102, 241] });
   addLine(`Generated: ${new Date().toLocaleString()}`, { fontSize: 9, color: [100, 116, 139] });
   y += 6;
 
