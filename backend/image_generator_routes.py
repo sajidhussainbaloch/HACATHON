@@ -17,7 +17,7 @@ router = APIRouter(prefix="/api/image", tags=["image-generator"])
 
 HF_API_KEY = os.getenv("HF_API_KEY")
 # Prefer the new router endpoint; keep configurable for testing
-HF_API_URL = os.getenv("HF_ROUTER_URL", "https://router.huggingface.co/models")
+HF_API_URL = os.getenv("HF_ROUTER_URL", "https://router.huggingface.co/hf-inference/models")
 
 # Available free models on Hugging Face
 HF_MODELS = {
