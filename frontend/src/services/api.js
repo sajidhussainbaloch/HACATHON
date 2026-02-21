@@ -134,16 +134,7 @@ export async function apiLogin({ email, password }) {
   return data;
 }
 
-export async function apiGoogleAuth() {
-  const { data, error } = await supabase.auth.signInWithOAuth({
-    provider: 'google',
-    options: {
-      redirectTo: `${window.location.origin}/app`,
-    },
-  });
-  if (error) throw new Error(error.message);
-  return data;
-}
+// Note: Google OAuth removed — keep email/password flows only.
 
 export async function apiForgotPassword({ email }) {
   const { error } = await supabase.auth.resetPasswordForEmail(email, {

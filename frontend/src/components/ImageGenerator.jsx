@@ -24,8 +24,6 @@ export default function ImageGenerator() {
 
   const modelOptions = [
     { value: 'flux-schnell', label: 'FLUX.1 Schnell (Fast)' },
-    { value: 'stable-diffusion-2.1', label: 'Stable Diffusion 2.1' },
-    { value: 'stable-diffusion-1.5', label: 'Stable Diffusion 1.5' },
   ];
 
   useEffect(() => {

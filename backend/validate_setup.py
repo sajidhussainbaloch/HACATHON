@@ -70,22 +70,7 @@ else:
 print(f"\n{BOLD}2. Google OAuth Configuration{RESET}")
 print("-" * 50)
 
-client_id = os.getenv("GOOGLE_CLIENT_ID", "")
-client_secret = os.getenv("GOOGLE_CLIENT_SECRET", "")
-
-if check(client_id, "GOOGLE_CLIENT_ID is set"):
-    passed += 1
-    if check(".apps.googleusercontent.com" in client_id, "GOOGLE_CLIENT_ID format looks correct"):
-        passed += 1
-    else:
-        failed += 1
-else:
-    failed += 1
-
-if check(client_secret, "GOOGLE_CLIENT_SECRET is set"):
-    passed += 1
-else:
-    failed += 1
+print("Google OAuth checks removed — this project uses Supabase email/password auth only.")
 
 # ─────────────────────────────────────────────────────────────────────────────
 print(f"\n{BOLD}3. Security Configuration{RESET}")
@@ -144,13 +129,10 @@ print("-" * 50)
 frontend_env_file = "frontend/.env.local"
 if os.path.exists(frontend_env_file):
     load_dotenv(frontend_env_file)
+    # Frontend Google client ID not required since Google OAuth removed
     vite_client_id = os.getenv("VITE_GOOGLE_CLIENT_ID", "")
-    if check(vite_client_id, f"VITE_GOOGLE_CLIENT_ID set in .env.local"):
-        passed += 1
-    else:
-        failed += 1
-else:
-    check_warning(False, f"Create frontend/.env.local with VITE_GOOGLE_CLIENT_ID")
+    if vite_client_id:
+        check_warning(False, "VITE_GOOGLE_CLIENT_ID set but Google OAuth has been removed in this branch")
 
 vite_api = os.getenv("VITE_API_URL", "")
 if check(vite_api, f"VITE_API_URL set"):

@@ -22,9 +22,8 @@ HF_API_URL = os.getenv("HF_ROUTER_URL", "https://router.huggingface.co/hf-infere
 # Available free models on Hugging Face
 HF_MODELS = {
     "flux-schnell": "black-forest-labs/FLUX.1-schnell",
-    "stable-diffusion-2.1": "stabilityai/stable-diffusion-2-1",
-    "stable-diffusion-1.5": "runwayml/stable-diffusion-v1-5",
 }
+    # Stable Diffusion models removed for policy / free-only restrictions
 
 
 class GenerateRequest(BaseModel):
