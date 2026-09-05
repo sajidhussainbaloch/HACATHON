@@ -1,0 +1,13 @@
+{
+	"folders": [
+		{
+			"path": "../../.."
+		},
+		{
+			"path": "../../../../project/AI INAGE GENraTION"
+		}
+	],
+	"settings": {
+		"powershell.cwd": "AI INAGE GENraTION"
+	}
+}
